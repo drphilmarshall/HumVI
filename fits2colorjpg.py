@@ -29,15 +29,14 @@ def fits2colorjpg(argv):
   FLAGS
     -h            Print this message
     -v            Verbose operation
-    --png         Make PNG instead of JPG 
 
   INPUTS
     red.fits etc  Names of FITS files containing image data
 
   OPTIONAL INPUTS
-    -s --scales   3,2,4    Comma-separated scales for R,G,B channels [None]
-    -n --nonlinearity  1.5 Non-linearity parameter
-    -o --output   outfile  Name of output filename [guessed]
+    -s --scales   3,2,4     Comma-separated scales for R,G,B channels [None]
+    -p --parameters  5,0.05 Non-linearity parameters Q,alpha
+    -o --output   outfile   Name of output filename [guessed]
 
   OUTPUTS
     stdout        Useful information
@@ -57,7 +56,7 @@ def fits2colorjpg(argv):
   # --------------------------------------------------------------------
 
   try:
-      opts, args = getopt.getopt(argv, "hv:s:p:n:o:",["help","verbose","png","scales","pars","output"])
+      opts, args = getopt.getopt(argv, "hvs:p:n:o:",["help","verbose","png","scales","pars","output"])
   except getopt.GetoptError, err:
       # print help information and exit:
       print str(err) # will print something like "option -a not recognized"
@@ -67,9 +66,9 @@ def fits2colorjpg(argv):
   vb = False
   
   png = False
-  outfile = 'output.jpg'
+  outfile = 'output.png'
   
-  pars = '8,0.02'
+  pars = '10,0.04'
   scales = 'Auto'
   
   for o,a in opts:
@@ -82,8 +81,6 @@ def fits2colorjpg(argv):
           pars = a
       elif o in ("-s","--scales"):
           scales = a
-      elif o in ("--png"):
-          png = True
       elif o in ("-o","--output"):
           outfile = a
       else:
@@ -97,10 +94,8 @@ def fits2colorjpg(argv):
     bfile = args[2]
     if vb:
       print "Making color composite image of data in following files:",rfile,gfile,bfile
-      if png: 
-        "Output will be in PNG format"
-      else:
-        "Output will be in JPG format"
+      print "Output will be written to",outfile
+
   else:
     print fits2colorjpg.__doc__
     return
@@ -135,10 +130,11 @@ def fits2colorjpg(argv):
     red.set_scale()
     green.set_scale()
     blue.set_scale()
-  else:
-    red.set_scale(manually=rscale)
-    green.set_scale(manually=gscale)
-    blue.set_scale(manually=bscale)
+    rscale,gscale,bscale = colorjpg.normalize_scales(red.scale,green.scale,blue.scale)
+ 
+  red.set_scale(manually=rscale)
+  green.set_scale(manually=gscale)
+  blue.set_scale(manually=bscale)
     
   if vb: 
     print 'Scales set to:',red.scale,green.scale,blue.scale

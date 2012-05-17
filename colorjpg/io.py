@@ -20,7 +20,7 @@ class channel:
    
       # Read in image and header:
       hdulist = pyfits.open(fitsfile)
-      self.image = hdulist[0].data
+      self.image = hdulist[0].data      
       self.hdr = hdulist[0].header
       hdulist.close()
 
@@ -41,8 +41,10 @@ class channel:
         self.wavelength = filter2wavelength(self.filter)
 
         # Suggest scale for this image based on exptime and zpt:
-        self.scale = numpy.sqrt(self.exptime)*10**(self.zpt + 2.5*numpy.log10(self.wavelength) - 26.0)
-
+        # self.scale = numpy.sqrt(self.exptime)*10**(self.zpt + 2.5*numpy.log10(self.wavelength) - 26.0)
+        self.scale = 10**(self.zpt + 2.5*numpy.log10(self.wavelength) - 26.0)
+        # This will be some crazy large number, in general.
+        
       return
    
    def apply_scale(self):
@@ -52,6 +54,12 @@ class channel:
       return
       
 # ======================================================================
+
+def normalize_scales(s1,s2,s3):
+   mean = (s1 + s2 + s3)/3.0
+   return s1/mean, s2/mean, s3/mean
+
+# ----------------------------------------------------------------------
 
 def extract_zeropoint(hdr):
 
@@ -108,9 +116,9 @@ def pack_up(r,g,b):
    NX,NY = numpy.shape(r)
 
    x = numpy.zeros([NX,NY,3])
-   x[:,:,0] = r
-   x[:,:,1] = g
-   x[:,:,2] = b
+   x[:,:,0] = numpy.flipud(r)
+   x[:,:,1] = numpy.flipud(g)
+   x[:,:,2] = numpy.flipud(b)
 
    x = numpy.clip(x,0.0,1.0)
    x = x*255
