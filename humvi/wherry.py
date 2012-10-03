@@ -223,11 +223,11 @@ def nw_arsinh(arrstk, nonlin=3.0):
 		print "wherry: nw_arsinh: no change made."
 		return arrstk
 	
-	##
-	radius = arrstk.sum(axis=-1)
-	radius[radius==0.0] = 1.0
+	## Add up all pixels to get broadband intensity
+	pixtot = arrstk.sum(axis=-1)
+	pixtot[pixtot==0.0] = 1.0
 	## Arsinh factor
-	fac = numpy.arcsinh(radius*nonlin)/(radius*nonlin)
+	fac = numpy.arcsinh(pixtot*nonlin)/(pixtot*nonlin)
 	
 	## Multiply each array in stack	by factor
 	for i in range (3):
