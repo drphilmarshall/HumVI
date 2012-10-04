@@ -6,6 +6,7 @@
 import numpy
 import sys,getopt,Image
 import humvi
+import os
 
 ## =====================================================================
 
@@ -68,7 +69,7 @@ def fits2colorjpg(argv):
 	vb = False
 
 	png = False
-	outfile = 'output.png'
+	outfile = os.path.dirname(args[0])+"/output.png"
 
 	pars = '10,0.04'
 	scales = 'Auto'
@@ -156,19 +157,19 @@ def fits2colorjpg(argv):
 	
 	if LuptonStretch:
 
-	  if vb:	print "Nonlinearity parameters Q,alpha:",Q,alpha
+		if vb:	print "Nonlinearity parameters Q,alpha:",Q,alpha
 
-	  I = humvi.lupton_intensity(red.image,green.image,blue.image)
-	  
-	  r = humvi.lupton_stretch(red.image,I,Q,alpha)
-	  g = humvi.lupton_stretch(green.image,I,Q,alpha)
-	  b = humvi.lupton_stretch(blue.image,I,Q,alpha)
+		I = humvi.lupton_intensity(red.image,green.image,blue.image)
 
-	  ## Package into a python Image, and write out to file:
+		r = humvi.lupton_stretch(red.image,I,Q,alpha)
+		g = humvi.lupton_stretch(green.image,I,Q,alpha)
+		b = humvi.lupton_stretch(blue.image,I,Q,alpha)
 
-	  image = humvi.pack_up(r,g,b) 
-	  image.save(outfile)
-	  if vb: print "Image saved to:",outfile
+		## Package into a python Image, and write out to file:
+
+		image = humvi.pack_up(r,g,b) 
+		image.save(outfile)
+		if vb: print "Image saved to:",outfile
 
 		return
 
@@ -187,7 +188,7 @@ def fits2colorjpg(argv):
 	
 # ======================================================================
 
-if __name__ == '__main__':
+if __name__ == "__main__":
   fits2colorjpg(sys.argv[1:])
 
 # ======================================================================
