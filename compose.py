@@ -9,10 +9,10 @@ import humvi
 
 ## =====================================================================
 
-def fits2colorjpg(argv):
+def compose(argv):
 	"""
 	NAME
-	  fits2colorjpg.py
+	  compose.py
 
 	PURPOSE
 	  Make a color composite JPG image from 3 FITS images, using the Lupton
@@ -24,7 +24,7 @@ def fits2colorjpg(argv):
 	  telescope/survey has to be recognised for this to work...
 
 	USAGE
-	  fits2colorjpg.py [flags] red.fits green.fits blue.fits
+	  compose.py [flags] red.fits green.fits blue.fits
 
 	FLAGS
 	  -h            Print this message
@@ -45,13 +45,13 @@ def fits2colorjpg(argv):
 
 	EXAMPLES
 
-	  fits2colorjpg.py  CFHTLS_27_i_sci.fits CFHTLS_27_r_sci.fits CFHTLS_27_g_sci.fits
+	  compose.py  CFHTLS_27_i_sci.fits CFHTLS_27_r_sci.fits CFHTLS_27_g_sci.fits
 	                    
 	BUGS
 
 	HISTORY
-	  2012-05-11 	started Marshall (Oxford)
-	  2012-07			integrated with wherry.py Sandford (NYU)
+	  2012-05-11    started Marshall (Oxford)
+	  2012-07-??    integrated with wherry.py Sandford (NYU)
 	"""
 
 	## -------------------------------------------------------------------
@@ -62,7 +62,7 @@ def fits2colorjpg(argv):
 	except getopt.GetoptError, err:
 	    ## print help information and exit:
 	    print str(err) ## will print something like "option -a not recognized"
-	    print fits2colorjpg.__doc__
+	    print compose.__doc__
 	    return
 
 	vb = False
@@ -77,7 +77,7 @@ def fits2colorjpg(argv):
 
 	for o,a in opts:
 	    if o in ("-h", "--help"):
-	        print fits2colorjpg.__doc__
+	        print compose.__doc__
 	        return
 	    elif o in ("-v", "--verbose"):
 	        vb = True
@@ -104,7 +104,7 @@ def fits2colorjpg(argv):
 	    print "Output will be written to",outfile
 
 	else:
-		print fits2colorjpg.__doc__
+		print compose.__doc__
 		return
 	  
 	## Parse nonlinearity parameters:  
@@ -188,6 +188,6 @@ def fits2colorjpg(argv):
 # ======================================================================
 
 if __name__ == '__main__':
-  fits2colorjpg(sys.argv[1:])
+  compose(sys.argv[1:])
 
 # ======================================================================
