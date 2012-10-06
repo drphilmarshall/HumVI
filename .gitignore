@@ -1,2 +1,20 @@
+## Python
 *.pyc
+
+
+## Latex
+*.out
+*.log
+*.aux
+*.synctex.gz
+*.toc
+
+
+## Bibtex
+*.bbl
+*.brf
+*.blg
+
+
+## Text editor
 *~
