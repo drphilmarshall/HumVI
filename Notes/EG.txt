@@ -1,0 +1,132 @@
+## Using snapall
+
+py
+import SExScript as SS
+foo="/home/users2/cs3006/Dropbox/Hogg_2012/Data/CFHTLS_30"
+L=SS.file_seek(foo,"*.cat")
+count=0
+for l in L:
+	count+=1
+	print "\n SExScript.py: snapall: SNAPSHOT SERIES",count,"OF",len(L),"\n"
+	SS.snapall(l)
+	
+
+
+## Convert fits to png having changed colourmap
+py ImageScript.py F2P ../Data/ CFHTLS_ HE
+py ImageScript.py F2P ../Data/ CFHTLS_ BB
+
+## Brighten pngs
+py ImageScript.py brighten
+
+
+
+## Manual use of PSFEx to do snap
+
+psfex /home/users2/cs3006/Dropbox/Hogg_2012/Data/CFHTLS_30/CFHTLS_30_g/CFHTLS_30_g_sci.cat  -CHECKIMAGE_TYPE SNAPSHOTS  -CHECKIMAGE_NAME /home/users2/cs3006/Dropbox/Hogg_2012/Data/CFHTLS_30/CFHTLS_30_g/CFHTLS_30_g_sci_Diagnostics/snap_n1_d0_CFHTLS_30_g_sci.fits  -PSFVAR_NSNAP 1  -PSFVAR_DEGREES 0   -CHECKPLOT_TYPE NONE  -WRITE_XML N 
+
+
+## PSFEx compare degrees
+
+psfex ../Data/CFHTLS_03/CFHTLS_03_g_sci/CFHTLS_03_g_sci.cat  -CHECKIMAGE_TYPE NONE -CHECKPLOT_TYPE NONE  -WRITE_XML N  -PSFVAR_DEGREES 0
+
+
+## Phil's perl script eg
+
+perl gallery.pl ../Data/CFHTLS_03/CFHTLS_03_g_sci/*.png
+
+## ISPR
+py ImageScript.py ../Data samp
+py ImageScript.py ../Data resi
+py ImageScript.py ../Data snap
+py GalleryScript.py ispr
+
+
+
+## PSF SHOW PIPELINE
+py SExScript.py ../Data
+py ImageScript.py P2P ../Data
+py GalleryScript.py psfs
+
+
+
+## Stretch all images
+py ImageScript.py Stretch ../Data/
+py ImageScript.py F2P ../Data/ *_rescaled
+py ImageScript.py F2P ../Data/ snap_n1*_rescaled zoom
+py GalleryScript.py ispr
+cp ../Data/ispr.pdf ~/public_html/cOmbine/PSF_Eyeball/
+
+
+
+## Apply Wherry
+===============
+
+## Standalone
+
+py wherry.py ~/Dropbox/Hogg_2012/Data/CFHTLS_03/CFHTLS_03_r_sci/CFHTLS_03_r_sci.fits ~/Dropbox/Hogg_2012/Data/CFHTLS_03/CFHTLS_03_g_sci/CFHTLS_03_g_sci.fits ~/Dropbox/Hogg_2012/Data/CFHTLS_03/CFHTLS_03_i_sci/CFHTLS_03_i_sci.fits ~/Dropbox/Hogg_2012/Code/HumVI/images/test/CFHTLS_03_WS.jpg
+
+ds9 ../Data/CFHTLS_03/CFHTLS_03_r_sci/CFHTLS_03_r_sci.fits -minmax -saveimage png ./HumVI/images/test/CFHTLS_03_r_sci.png -exit
+
+ds9 ../Data/CFHTLS_03/CFHTLS_03_g_sci/CFHTLS_03_g_sci.fits -minmax -saveimage png ./HumVI/images/test/CFHTLS_03_g_sci.png -exit
+
+ds9 ../Data/CFHTLS_03/CFHTLS_03_i_sci/CFHTLS_03_i_sci.fits -minmax -saveimage png ./HumVI/images/test/CFHTLS_03_i_sci.png -exit
+
+perl gallery.pl ./HumVI/images/test/CFHTLS_03_r_sci.png ./HumVI/images/test/CFHTLS_03_g_sci.png ./HumVI/images/test/CFHTLS_03_i_sci.png ./HumVI/images/test/CFHTLS_03_WS.jpg -pdf -t -o ./HumVI/images/test/Wherry.pdf
+
+
+## HumVI
+--------
+
+## No scale
+
+py fits2colorjpg.py -v -o ~/Dropbox/Hogg_2012/Code/HumVI/images/test/CFHTLS_03_lupton.jpg    ~/Dropbox/Hogg_2012/Data/CFHTLS_03/CFHTLS_03_i_sci/CFHTLS_03_i_sci.fits ~/Dropbox/Hogg_2012/Data/CFHTLS_03/CFHTLS_03_r_sci/CFHTLS_03_r_sci.fits ~/Dropbox/Hogg_2012/Data/CFHTLS_03/CFHTLS_03_g_sci/CFHTLS_03_g_sci.fits
+
+py fits2colorjpg.py -v -o ~/Dropbox/Hogg_2012/Code/HumVI/images/test/CFHTLS_03_wherry.jpg --wherry  ~/Dropbox/Hogg_2012/Data/CFHTLS_03/CFHTLS_03_i_sci/CFHTLS_03_i_sci.fits ~/Dropbox/Hogg_2012/Data/CFHTLS_03/CFHTLS_03_r_sci/CFHTLS_03_r_sci.fits ~/Dropbox/Hogg_2012/Data/CFHTLS_03/CFHTLS_03_g_sci/CFHTLS_03_g_sci.fits
+
+
+perl gallery.pl -t -pdf  ~/Dropbox/Hogg_2012/Data/CFHTLS_03/CFHTLS_03_r_sci/Enhanced_Original/CFHTLS_03_r_sci_rescaled.png ~/Dropbox/Hogg_2012/Data/CFHTLS_03/CFHTLS_03_g_sci/Enhanced_Original/CFHTLS_03_g_sci_rescaled.png ~/Dropbox/Hogg_2012/Code/HumVI/images/test/CFHTLS_03_lupton.jpg ~/Dropbox/Hogg_2012/Code/HumVI/images/test/CFHTLS_03_wherry.jpg  -o ~/Dropbox/Hogg_2012/Code/HumVI/images/test/CFHTLS_03_lw.pdf
+
+
+
+## Get kernels
+## ===========
+
+py PSF_Generator.py kern [10,10]
+
+py PSF_Generator.py imdec ../test/CFHTLS_03_g_sci.fits ../Data/GPSF/snap_n1_d0_CFHTLS_03_g_PSFtoGauss_10.krn
+
+
+
+Deconvolution
+=============
+
+py PSF_Generator.py imdec ../Data/CFHTLS_03/CFHTLS_03_g_sci/CFHTLS_03_g_sci.fits ../Data/GPSF/snap_n1_d0_CFHTLS_03_g_PSFtoGauss_10.krn
+
+perl gallery.pl ../Data/CFHTLS_03/CFHTLS_03_g_sci/Enhanced_Original/CFHTLS_03_g_sci_rescaled.png ../Data/Deconvolved/gsc_CFHTLS_03_g_sci_rescaled.png ../Data/CFHTLS_03/CFHTLS_03_g_sci/CFHTLS_03_g_sci_Diagnostics/snap_n1_d0_CFHTLS_03_g_sci.png ../Data/GPSF/snap_n1_d0_CFHTLS_03_g_sci_Gaussianised.png  ../Data/CFHTLS_03/CFHTLS_03_g_sci/CFHTLS_03_g_sci_Diagnostics/snap_n1_d0_CFHTLS_03_g_sci_z8.png ../Data/GPSFz/snap_n1_d0_CFHTLS_03_g_sci_Gauss_z8.png      -t -pdf -o ../Data/Deconvolved/CFHTLS_03_g_Deconvolved.pdf
+
+
+## Compare psfs and deconvolutions
+gallery.pl\
+ ../Data/CFHTLS_03/CFHTLS_03_g_sci/Enhanced_Original/CFHTLS_03_g_sci_rescaled.png\
+ ../Data/Deconvolved/gsc_CFHTLS_03_g_sci_rescaled.png\
+ ../Data/GPSFz/snap_n1_d0_CFHTLS_03_g_sci_z8.png\
+ ../Data/GPSFz/snap_n1_d0_CFHTLS_03_g_sci_Gauss_z8.png\
+ -o ../Data/Deconvolved/CFHTLS_03_g_Deconvolved.pdf -pdf -t
+
+
+## Compare psfs and deconvolutions with a couple of stretches
+gallery.pl\
+ ../Data/CFHTLS_03/CFHTLS_03_g_sci/Enhanced_Original/CFHTLS_03_g_sci_rescaled.png  ../Data/Deconvolved/gsc_CFHTLS_03_g_sci_rescaled.png  ../Data/GPSFz/snap_n1_d0_CFHTLS_03_g_sci_z8.png ../Data/GPSFz/snap_n1_d0_CFHTLS_03_g_sci_Gauss_z8.png\
+ \
+ ../Data/CFHTLS_03/CFHTLS_03_g_sci/Enhanced_Original/CFHTLS_03_g_sci_rescaledl.png ../Data/Deconvolved/gsc_CFHTLS_03_g_sci_rescaledl.png\
+ ../Data/CFHTLS_03/CFHTLS_03_g_sci/Enhanced_Original/CFHTLS_03_g_sci_rescaledll.png ../Data/Deconvolved/gsc_CFHTLS_03_g_sci_rescaledll.png\
+ -o ../Data/Deconvolved/CFHTLS_03_g_Deconvolved_noisecompare.pdf -pdf -t
+
+
+
+
+find ./* ! -name "*CFHTLS_*sci.fits" -type f -delete
+
+
+
