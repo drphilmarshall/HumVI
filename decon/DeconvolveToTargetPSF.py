@@ -74,7 +74,10 @@ def main(argv):
 		- Can't save directly to PNG in GPSF() -- save as FITS then convert.
 		
 		- Use flags rather than relying on argv
-
+	
+	TO DO
+		- Make AsecToPix method
+		
 	HISTORY
 	  2012-06-12 started Sandford (NYU)
 	"""
@@ -184,7 +187,7 @@ def Gauss_2D(size, w_x, w_y, x0, y0, scale=1.0):
 	x=numpy.arange(0.0,size,1.0,float)
 	y=x[:,numpy.newaxis]
 	## Compute Gaussian
-	gaussian=numpy.exp(-0.5*(((x-x0)/w_x)**2+((y-y0)/w_y)**2))	
+	gaussian=numpy.exp(-0.5*(((x-x0)/w_x)**2+((y-y0)/w_y)**2))
 	## Cut out pixels below threshold
 	gaussian[gaussian<7.0e-6]=0.0
 	## Normalise
@@ -192,7 +195,15 @@ def Gauss_2D(size, w_x, w_y, x0, y0, scale=1.0):
 	## Make same scale as original image	
 	return scale*gaussian
 	
+
+##============================================================
+## Translate a width in arcseconds to pixels
+
+def AsecToPix(w, infile):
 	
+	
+	return
+
 ##============================================================	
 
 

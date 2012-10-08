@@ -74,7 +74,7 @@ def nw_rgb_make(Rim,Gim,Bim,\
 		if vb: print "wherry: nw_rgb_make: no rescale."
 
 	## Rebin
-	if rebin[0] == rebin[1] == 1.0:
+	if xrebin == yrebin == 1.0:
 		if vb: print "wherry: nw_rebin_image: no rebinning."
 	else:
 		imagestack = nw_rebin_image(imagestack, [yrebin,xrebin])

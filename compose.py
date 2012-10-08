@@ -52,7 +52,8 @@ def compose(argv):
 	
 	               
 	BUGS
-
+	
+	- Need to specify outfile name
 
 	HISTORY
 	  2012-05-11    started Marshall (Oxford)

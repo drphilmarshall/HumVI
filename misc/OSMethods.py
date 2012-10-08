@@ -10,9 +10,9 @@ import shutil
 
 def main():
 	
-	for string in ["CFHTLS_*_sci_cHE.png"]:#,"snap_n1_d0_CFHTLS_*.png"]:	
+	for string in ["CFHTLS_*_sci.png"]:	
 		for image in file_seek("../Data/",string):
-			shutil.copy(image,"/home/users2/cs3006/public_html/cOmbine/PSF_Eyeball")	
+			shutil.copy(image,"/home/users2/cs3006/public_html/PSF_Eyeball")	
 	return
 
 ##============================================================

@@ -83,6 +83,7 @@ def main(argv):
 	## Default flag settings
 	vb=False
 	simul=False
+	psf_width=None
 	file_string="CFHTLS*sci.fits"
 	krn_size=15
 	
@@ -114,7 +115,7 @@ def main(argv):
 		elif os.path.isdir(arg): filelist+=file_seek(arg,file_string)
 	
 	if simul is False:
-		single_deconvolve(filelist, krn_size, vb)
+		single_deconvolve(filelist, krn_size, psf_width, vb)
 	else:
 		simultaneous_deconvolve(filelist, krn_size, vb)
 	
@@ -127,7 +128,7 @@ def main(argv):
 
 ##============================================================
 	
-def single_deconvolve(filelist, krn_size, vb):
+def single_deconvolve(filelist, krn_size, psf_width, vb):
 
 	## Deconvolve all FITS images in list
 	for infile in filelist:
@@ -141,7 +142,10 @@ def single_deconvolve(filelist, krn_size, vb):
 		psf_obs = IM.pngcropwhite(IM.fits_pix(psf_obs))
 		
 		## Make target psf array
-		psf_ref = DT.Gauss_2D(*DT.moments(psf_obs))
+		gaussparams = list(DT.moments(psf_obs))
+		if type(psf_width) is float:			
+			gaussparams[1]=gaussparams[2]=psf_width#AsecToPix(psf_width,infile)
+		psf_ref = DT.Gauss_2D(*gaussparams)
 		## Calculate kernel array
 		kernarr = DT.get_kernel(psf_obs, psf_ref,[krn_size,krn_size],vb)	
 		## Deconvolve image
@@ -153,7 +157,7 @@ def single_deconvolve(filelist, krn_size, vb):
 
 ### WORKING ON THIS
 def simultaneous_deconvolve(filelist, krn_size, vb):
-		
+	
 	s2_max = 0.0
 	
 	## Find largest PSF in ensemble
