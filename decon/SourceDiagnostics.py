@@ -135,9 +135,9 @@ def SEx(imgname, vb):
 		return
 		
 	## PSFEx needs output in FITS_LDAC format, and different data in parameter file
-	confile = " -c ~/Dropbox/Hogg_2012/Code/HumVI/decon/AstromaticConfig/prepsfex.sex "
-	confile += " -FILTER_NAME ~/Dropbox/Hogg_2012/Code/HumVI/decon/AstromaticConfig/default.conv "
-	params  = " -PARAMETERS_NAME ~/Dropbox/Hogg_2012/Code/HumVI/decon/AstromaticConfig/prepsfex.param "
+	confile = " -c ~/Dropbox/Hogg_2012/HumVI/decon/AstromaticConfig/prepsfex.sex "
+	confile += " -FILTER_NAME ~/Dropbox/Hogg_2012/HumVI/decon/AstromaticConfig/default.conv "
+	params  = " -PARAMETERS_NAME ~/Dropbox/Hogg_2012/HumVI/decon/AstromaticConfig/prepsfex.param "
 	cattype = " -CATALOG_TYPE FITS_LDAC "
 	catname = imgname[:-5]+".cat"
 	catdecl = " -CATALOG_NAME "+catname
@@ -172,7 +172,7 @@ def PSFEx(catfile, mode, vb):
 
 ##------------------------------------------------------------
 	imgname = None
-	config = " -c ~/Dropbox/Hogg_2012/Code/HumVI/decon/AstromaticConfig/default.psfex "
+	config = " -c ~/Dropbox/Hogg_2012/HumVI/decon/AstromaticConfig/default.psfex "
 	
 	## If we want to return only a PSF snapshot
 	if mode=="snap":
