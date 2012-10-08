@@ -4,6 +4,9 @@ Works as a standalone module, or integrated into HumVI
 This means there's some extra baggage.
 
 If an argument variable doesn't have the correct type, e.g. expects list but gets None, the relevant steps of the code are skipped.
+
+
+vb needs to be a parameter
 """
 
 ##============================================================
@@ -35,6 +38,7 @@ def nw_rgb_make(Rim,Gim,Bim,\
 								yrebin=1.0,xrebin=1.0,origin=[0.,0.,0.], \
                 saturatetowhite=True,overlay=False,underlay=False,invert=False):
   
+  vb = False
   
 	## Read in data if given file names
 	if type(Rim) is str:
@@ -64,9 +68,10 @@ def nw_rgb_make(Rim,Gim,Bim,\
 	
 	## Rescale if this hasn't already been done
 	if type(scalefactors) is list and scalefactors!=[1.0,1.0,1.0]:
-		print "wherry: nw_rgb_make: rescaling by", scalefactors
+		if vb: print "wherry: nw_rgb_make: rescaling by", scalefactors
 		imagestack = nw_scale_rgb(imagestack, scalefactors)
-	else: print "wherry: nw_rgb_make: no rescale."
+	else:
+		if vb: print "wherry: nw_rgb_make: no rescale."
 
 	## Rebin
 	imagestack = nw_rebin_image(imagestack, [yrebin,xrebin])
@@ -77,14 +82,14 @@ def nw_rgb_make(Rim,Gim,Bim,\
 	## Arsinh stretch
 	try:
 		nonlinearity = float(nonlinearity)
-		print "wherry: nw_rgb_make: arsinh stretch with nonlinearity",nonlinearity
+		if vb: print "wherry: nw_rgb_make: arsinh stretch with nonlinearity",nonlinearity
 		imagestack = nw_arsinh(imagestack, nonlinearity)
 	except (ValueError, TypeError):
-		print "wherry: nw_rgb_make: no stretch."
+		if vb: print "wherry: nw_rgb_make: no stretch."
 
 	## Box-cut
 	if saturatetowhite==False:
-		print "wherry: nw_rgb_make: box-cut."
+		if vb: print "wherry: nw_rgb_make: box-cut."
 		imagestack = nw_cut_to_box(imagestack, origin)
 
 	## Overlay / underlay
@@ -101,7 +106,7 @@ def nw_rgb_make(Rim,Gim,Bim,\
 	## Invert
 		## Does this make sense?
 	if invert==True:
-		print "wherry: nw_rgb_make: inverting image."
+		if vb: print "wherry: nw_rgb_make: inverting image."
 		for i in [0,1,2]:
 		 	imagestack[:,:,i] = imagestack[:,:,i].max()+imagestack[:,:,i].min()-imagestack[:,:,i]
 
@@ -116,7 +121,7 @@ def nw_rgb_make(Rim,Gim,Bim,\
 	"""
 	
 	scipy.misc.imsave(outfile, imagestack)
-	print "wherry: nw_rgb_make: saved RGB JPEG to\n",outfile,"\n"
+	if vb: print "wherry: nw_rgb_make: saved RGB JPEG to\n",outfile,"\n"
 
 	return None
   
@@ -223,11 +228,11 @@ def nw_arsinh(arrstk, nonlin=3.0):
 		print "wherry: nw_arsinh: no change made."
 		return arrstk
 	
-	##
-	radius = arrstk.sum(axis=-1)
-	radius[radius==0.0] = 1.0
+	## Add up all pixels to get broadband intensity
+	pixtot = arrstk.sum(axis=-1)
+	pixtot[pixtot==0.0] = 1.0
 	## Arsinh factor
-	fac = numpy.arcsinh(radius*nonlin)/(radius*nonlin)
+	fac = numpy.arcsinh(pixtot*nonlin)/(pixtot*nonlin)
 	
 	## Multiply each array in stack	by factor
 	for i in range (3):

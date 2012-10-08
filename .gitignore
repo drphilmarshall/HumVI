@@ -1,5 +1,29 @@
+## Python
 *.pyc
+
+doc/*.aux
+doc/*.log
+doc/*.pdf
+
+
+## Latex
+*.out
+*.log
+*.aux
+*.synctex.gz
+*.toc
+
+
+## Bibtex
+*.bbl
+*.brf
+*.blg
+
+
+## Text editor
 *~
+
+
 doc/*.aux
 doc/*.log
 doc/*.pdf
