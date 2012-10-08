@@ -47,8 +47,12 @@ def compose(argv):
 	EXAMPLES
 
 	  compose.py  CFHTLS_27_i_sci.fits CFHTLS_27_r_sci.fits CFHTLS_27_g_sci.fits
-	                    
+	  
+	  py compose.py ../Data/test03/gDeconvolved_CFHTLS_03_i_sci_rescaled.fits ../Data/test03/gDeconvolved_CFHTLS_03_r_sci_rescaled.fits ../Data/test03/gDeconvolved_CFHTLS_03_g_sci_rescaled.fits
+	
+	               
 	BUGS
+
 
 	HISTORY
 	  2012-05-11    started Marshall (Oxford)

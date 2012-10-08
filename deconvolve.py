@@ -30,13 +30,13 @@ def main(argv):
 		python deconvolve.py [flags] filename/directory
 
 	FLAGS
-	  -h            Print this message
-	  -vb						Verbose
+		-h            Print this message
+		-vb						Verbose
 	  
-	  -p	--psfw		f		PSF size in arcseconds
-	  -k	--kern		i		Deconvolution kernel size in pixels
-	  -s	--instr		s		Select files containing the following string
-	  		--sim					Deconvolve all inputs to the same resolution
+		-p	--psfw		f		PSF size in arcseconds
+		-k	--kern		i		Deconvolution kernel size in pixels
+		-s	--instr		s		Select files containing the following string
+				--sim					Deconvolve all inputs to the same resolution
 
 	INPUTS
 
@@ -47,12 +47,15 @@ def main(argv):
 	  
 	  image catalogue
 	  .psf
-	  ...
+	  ... MORE
 	  psf snapshot
 	  
 
 	EXAMPLES
 		py deconvolve.py ../Data/test_03g/
+		
+		py deconvolve.py --sim ../Data/test03/CFHTLS_03_i_sci.fits ../Data/test03/CFHTLS_03_r_sci.fits  ../Data/test03/CFHTLS_03_g_sci.fits
+	                
 	                    
 	BUGS / ISSUES		
 		- Need an elegant way of combining the single and simultaneous

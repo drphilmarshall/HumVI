@@ -1,10 +1,6 @@
 ## Python
 *.pyc
 
-doc/*.aux
-doc/*.log
-doc/*.pdf
-
 
 ## Latex
 *.out
@@ -24,6 +20,4 @@ doc/*.pdf
 *~
 
 
-doc/*.aux
-doc/*.log
 doc/*.pdf

@@ -52,8 +52,6 @@ def main():
 	BUGS
 		No bugs per se, but a lot of usability improvements / tidying up
 		to do.
-		
-		Array to FITS method should take header info too.
 
 	HISTORY
 	  2012-06-12 started Sandford (NYU)
@@ -238,10 +236,14 @@ def fits_pix(filename):
 	im = pyfits.open(filename)
 	return numpy.array(im[0].data)
 
+def fits_hdr(filename):
+	im = pyfits.open(filename)
+	return im[0].header
+
 ## Convert png file to an array of (0-255) pixel values
 def png_pix(filename):
 	img = Image.open(filename)
-	dim = [img.size[1],img.size[0]]	## Because of course they need to be reversed stupid PIL
+	dim = [img.size[1],img.size[0]]	## Because of course they need to be reversed
 	img = img.convert("L")
 	dat = numpy.array(img.getdata())
 	dat = numpy.reshape(dat, dim)
@@ -251,8 +253,10 @@ def png_pix(filename):
 ##============================================================
 
 ## Make FITS image from array of pixels
-def makeFITS(outfile, array):
+def makeFITS(outfile, array, head=False):
 	hdu = pyfits.PrimaryHDU(array[::-1])
+	if head:
+		hdu.header = head
 	hdu.writeto(outfile)
 	return
 

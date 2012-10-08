@@ -38,7 +38,7 @@ def nw_rgb_make(Rim,Gim,Bim,\
 								yrebin=1.0,xrebin=1.0,origin=[0.,0.,0.], \
                 saturatetowhite=True,overlay=False,underlay=False,invert=False):
   
-  vb = False
+	vb = False
   
 	## Read in data if given file names
 	if type(Rim) is str:
@@ -74,7 +74,10 @@ def nw_rgb_make(Rim,Gim,Bim,\
 		if vb: print "wherry: nw_rgb_make: no rescale."
 
 	## Rebin
-	imagestack = nw_rebin_image(imagestack, [yrebin,xrebin])
+	if rebin[0] == rebin[1] == 1.0:
+		if vb: print "wherry: nw_rebin_image: no rebinning."
+	else:
+		imagestack = nw_rebin_image(imagestack, [yrebin,xrebin])
 	  
 	## Kill noise -- is this allowed?
 	imagestack[imagestack<cutoff] = 0.0
@@ -163,12 +166,6 @@ def readin(Rim,Gim,Bim):
 
 ## Can take a single image or a stack
 def nw_rebin_image(arr, rebin=[1.0,1.0]):
-	
-	if rebin[0] == rebin[1] == 1.0:
-		print "wherry: nw_rebin_image: no rebinning."
-		return arr
-		
-##------------------------------------------------------------	
 	
 	## Old and new dimensions
 	in_h,in_w = arr.shape[0],arr.shape[1]

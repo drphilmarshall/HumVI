@@ -12,8 +12,8 @@ import time
 import getopt
 from scipy.signal import fftconvolve as convolve
 from ImageMethods import linear_rescale, stretch_params,\
-												 fits_pix, png_pix, pngcropwhite, writearray,\
-												 makeFITS
+												 png_pix, pngcropwhite, writearray,\
+												 fits_pix, fits_hdr, makeFITS
 from OSMethods import file_seek
 from common import lineno
 from sys import argv
@@ -419,8 +419,10 @@ def deconvolve_image(imagefile, kernel, vb=False):
 	
 	## Determine image file type and get pixels
 	imgext = os.path.splitext(imagefile)[1]
-	if imgext==".fits":	imgarr = fits_pix(imagefile)
-	elif imgext==".png": imgarr = png_pix(imagefile) ## Doesn't work
+	if imgext==".fits":
+		imgarr = fits_pix(imagefile)
+	elif imgext==".png":
+		assert False, "Cannot handle PNG format."
 	
 	## For some reason the image is flipped at this point, so un-flip
 	imgarr = imgarr[::-1,:]
@@ -546,7 +548,7 @@ def deconvolve_image(imagefile, kernel, vb=False):
 	if os.path.isfile(outfile+".png"):  os.remove(outfile+".png")
 	
 	## Save image as FITS and as PNG
-	makeFITS(outfile+".fits", g_sc)
+	makeFITS(outfile+".fits", g_sc, fits_hdr(imagefile))
 	scipy.misc.imsave(outfile+".png", g_sc)
 	if vb: print "DeconvolveToTargetPSF.py: deconvolve_image: image saved to",outfile+".fits"
 	
