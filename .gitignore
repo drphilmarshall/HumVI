@@ -1,5 +1,5 @@
 *.pyc
-<<<<<<< HEAD
 *~
-=======
->>>>>>> e9a3b563d6aeedc566462e12b88f0bb6cd7722b9
+doc/*.aux
+doc/*.log
+doc/*.pdf

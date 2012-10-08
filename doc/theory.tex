@@ -1,0 +1,342 @@
+%=================================================
+
+% Notes on human-viewable (and robot-viewable) images,
+% information content and so on. 
+
+% These are thoughts in progress -- hopefully this text
+% will be useful at some point, chopped up and rearranged
+% into a coherent story!
+
+\documentclass[letterpaper, 11pt]{article}
+
+%=================================================
+
+\usepackage{amsmath,amssymb}
+
+\title{Viewing Informative Images}
+\author{Phil Marshall\thanks{\texttt{dr.phil.marshall@gmail.edu}}}
+\date{\today}
+
+%%-------------------------------------------------
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract} 
+
+In astronomy, and many other areas of science, discoveries can be made simply
+by looking at images. While this might be thought of as data exploration, we
+argue that it is actually a form of data modeling -- and that  by considering
+a robotic viewer who computes and reports the Shannon information content of
+images relative to its model for how they were generated, we arrive at some
+hypotheses for how one might prepare images for a human image inspection
+program that has high capability for discovery.
+
+\end{abstract}
+
+
+% =================================================
+
+\section{Introduction}
+
+Images contain information. In astronomy, new planets, stars and galaxies can
+be discovered simply by looking at images taken of the sky through telescopes
+-- a statement which can be generalised to many other fields of science. How
+is this possible? For something new to be discovered in an image, that new
+feature must, by definition, be something that has not been seen before:
+something that is at odds with our expectations of the features that similar 
+images contain, something that is surprising. Image viewing is a form of data
+exploration, an important step before making quantitative measurements. But
+both exploration and measurement involve data modeling, or inference: the
+viewer necessarily interprets the image in the context of a model for that
+image that they have in their heads. The surprisingness of a feature in an
+image is relative to this model: discovery is relative to what is already
+known. Note that in general discovery is a personal experience: each viewer
+has their own model for image features against which new images are compared.
+Only if the model is shared among (and agreed upon by) all viewers will a
+discovery be global: if making such global discoveries is our goal as
+scientists, then we must make this model as complete as possible, and publish
+it. This is what astronomers do.
+
+A mathematical description of discovery must therefore relate the data in hand
+to the model in mind, and will provide a quantification of that new
+information which constitutes the discovery.  In probability theory, the
+(Shannon) information is defined as $I = -\log_2 P$, where $P$ is a
+probability. $I$ is a measure of surprise: the lower an event's probability,
+the more surprising it is, and the higher is its information content $I$. We
+can  compute the  information content of a dataset $\boldsymbol{d}$ using this
+definition, such that $I(\boldsymbol{d}|H)$ quantifies how surprising that
+dataset is to its observer, who (naturally)  has a set of expectations $H$
+about it.  Specifically, the information content of the dataset (in bits) is
+given by
+\begin{equation}
+I(\boldsymbol{d}|H) = -\log_2 {\rm Pr}(\boldsymbol{d}|H).
+\end{equation}  
+This particular probability (also known as the evidence, or marginal
+likelihood) is an integral over the (typically immense) parameter space of the
+model, 
+${\rm Pr}(\boldsymbol{d}|H) = 
+\int {\rm Pr}(\boldsymbol{d}|\boldsymbol{\theta},H)
+     {\rm Pr}(\boldsymbol{\theta}|H)$. In this expression 
+we see two familiar quantities, the likelihood of the data, and the prior PDF
+over the model parameters.  The negative sign indicates that information
+content is highest when the marginal likelihood is {\it minimized}. That is,
+datasets  that are fitted terribly by the model, even when considering all
+possible  values of the parameters of the model, are highly informative. 
+Further, if the data quality improves, then the goodness of fit to this
+terrible model  will get {\it worse}, in that the significance of the
+residuals will increase -- which means a decrease in the likelihood, and an
+increase in the information content of the dataset. In this way,  information
+content can be high because the data is good, or the model is bad -- or both.
+ 
+What does this mean for image viewing?  Let us consider a robot whose purpose
+is to view images and report new discoveries from them. We could design it
+such that it computes and reports the information $I$ associated with each
+feature in the image, based on an internal model for astronomical images that
+we provide.  Clearly, if $I$ is to be a useful metric for the robot to use
+when  evaluating a dataset, the model $H$ has to be as complete as possible:
+it has to represent everything that we know about the features present in 
+astronomical images, including the probability distributions for the
+parameters that describe those features. If $H$ is incomplete in some way, the
+robot will be surprised by features that we find familiar. Only when $H$ is
+complete will the robot be efficient at discovery, and report features that
+are new to all of us as well as to itself. Note that in science we seek both
+discovery and understanding, which means maximizing information content with
+respect to $\boldsymbol{d}$, but minimizing it with respect to $H$: for a
+given dataset we want to find the model that agrees with it the most, but for
+a given model we want the dataset that agrees with it the least. 
+
+Our working supposition is that the robot introduced above is a plausible
+model for how humans actually process images when they view them.  By
+considering our response to various changes in the data we view, or in our
+internal model of it,  we can make some recommendations for the design of
+practical image-viewing robots; likewise, guided by the mathematical rules
+followed by our hypothetical robot, we hope to be able to make some hypotheses
+about how to carry out a human image inspection discovery program.
+
+
+% ----------------------------------------------------------------------------
+
+\section{Expectations about Images}
+
+What is our internal model for astronomical images? What prior PDF do we
+assign to its parameters?  The answers to these questions are rather different
+to the models and priors often used in the image processing literature. There,
+for example, gross image properties such as sparseness and positivity have
+been used extensively. The prior PDFs associated with these expectations are
+so uninformative that the information content of an observed image will always
+be high, just because images drawn from these prior distributions do not look
+like astronomical images. Features in the image will appear to have 
+information $I$ that increases as they depart further from the featureless
+background: big galaxies will appear to be more informative  than small  ones,
+no matter how interesting the latter are, and so on. 
+
+When viewing astronomical images ourselves we are typically more interested in
+the features of images rather than the images themselves, and how interested
+we are depends on what we have seen before. A prior PDF for features in
+astronomical images is so high dimensional and 
+complex that it has not yet been encoded such that a robot can view images
+in the manner of a human. However, one way to approach this problem
+would be to build one in
+the same way that we did for ourselves: we note interesting things in images
+based on our experience of a large library of previously viewed images. Humans
+are extremely good at interpolating between points in image feature space,
+recognising a galaxy as being a galaxy based on their experience of many other
+images of galaxies.  What is especially impressive is that this set of images
+is typically highly heterogeneous, having varying resolution, depth, dynamic
+range and spectral coverage. This means that when we are presented with a new
+image, we have to infer its resolution, depth, dynamic range and  spectral
+coverage from the data itself, with only fairly broad priors to work from. Had
+our training images been displayed {\it homogeneously}, these priors could be
+made much narrower, to the point where the properties of the imaging system
+could be assumed rather than inferred from the data each time. This would
+simplify the robot's task significantly.
+
+Note that in considering such a procedure, we are dividing up our image  model
+parameters into those we are interested in (that describe astrophysical
+objects) and those we are not (that describe the imaging system). We don't
+just want informative images -- we want that information to be about 
+astrophysical objects. Image features of non-astrophysical origin are called
+artifacts. They  have potentially high surprise value, but are not
+interesting. Artifacts can be introduced by either the hardware or software
+parts of an imaging system, but either way they provide high information
+content unless they are included in the model.  How should we deal with
+artifacts to make our robot's task easier? One way would be to include them in
+its model, so that it would recognise artifacts and ignore them. The problem
+with this approach is one of confusion: if a particular class of artifacts
+looks like a new, interesting thing, images that contain examples of those
+new, interesting things will be assigned low information content by the robot.
+If we are looking for faint, blue, streaks, we had better not
+introduce artifacts that are faint, blue and streaky.
+Model degeneracy between artifacts and new features is a particularly 
+problematic barrier to discovery. Perhaps the best way round it is to  note
+that truly informative images are {\it clean}, and assert that the 
+fewer artifacts introduced, the better.
+
+{\it A model for features in astronomical images can be built by interpolating
+a large sample of library images. This task can be simplified by partitioning
+off the volume of parameter space associated with the imaging system itself,
+(by preparing a homogeneous set of library images) and by avoiding (where
+possible) the need to parametrize uninteresting artifacts (by designing an
+imaging system that does not introduce them in the first place).}
+
+
+% ----------------------------------------------------------------------------
+
+\section{Image Quality}
+
+A viewer with a given model in mind will make discoveries in the images  that
+are highly {\it informative}. What do we mean by this? Consider the following
+examples of high information content images, ones with high ``surprise value''
+that were found to contain:  an unusual faint object was spotted;  an
+otherwise typical bright object was seen to actually be two objects; a
+familiar-looking object was found to have unusual colour.  In each of these
+examples, the feature was somewhat familiar, but some property of the image
+itself enabled the surprise of the feature: \it{angular resolution, depth and
+colour are all clearly related to information content}. 
+
+The robot's information content, $I(\boldsymbol{d}|H)$, can be seen to depend
+on these image properties too, as follows. Recall that in order to compute 
+$I(\boldsymbol{d}|H)$, the robot has to predict the image by varying the
+parameters of its model, compute the likelihood of each predicted image, and
+then integrate over all its model parameters to compute the evidence for the
+model. Increasing the signal to noise of an image (by collecting more photons
+such that the fractional pixel uncertainty due to Poisson fluctuations is
+reduced) has the effect of steepening the likelihood function and so reducing
+the volume of parameter space associated with high goodness of fit. Model
+features that fitted low signal to noise images badly will give even worse
+fits when the signal to noise improves. Increasing the resolution of an image
+has a similar effect: where before, a range of model features  differing only
+in unresolved detail all gave comparably high likelihoods, with higher
+resolution only a fraction of those models will still be good fits, and so the
+marginal likelihood will decrease and $I$ will increase. Likewise, adding more
+spectral coverage, by including images in more filters, means that a narrower
+range of model features will fit the data -- the modeller has to get the
+colours right as well as the shapes.  
+
+How can we increase the informativeness of a displayed image? Astronomical
+image signal to noise, or depth, is limited by the telescope collecting area,
+throughput and the exposure time used; angular resolution is similarly limited
+by either the telescope aperture size, or the stability of the atmosphere, or
+in some cases the motion of the telescope, and so on. The choice of filters
+used determines the spectral coverage of the image set. In principle, an image
+viewing robot could take all these factors into account when computing its
+predicted images, making a high fidelity model image of the sky, and then
+degrading it in order to match the observed image and  compute its likelihood.
+In practice, however, such calculations may be too computationally expensive
+to perform in the available time. Instead, intermediate images with enhanced
+resolution and apparent signal to noise can be produced by inferring model
+images assuming uninformative priors. Such inferences incorporate two pieces
+of information that the robot has, but may not be able to use efficiently: the
+point spread function in the image, and a noise model. Such intermediate image
+reconstruction is the subject of much of the image restoration literature
+referred to above. The output model images are ``deconvolved,'' and have
+higher angular resolution, and smaller (although perhaps correlated) pixel
+uncertainties. However, they may also contain new artifacts. Whether the
+introduction of these artifacts negates the benefits of the deconvolution
+analysis will depend on the discoverable  features in the image. 
+
+Do we human viewers carry out an approximation to this restoration procedure?
+Information about the point spread function of the image is available via the
+stars present -- but do we use this information and perform some correction --
+deconvolution -- when viewing the image? To what extent are we able to correct
+for a particular set of filters having been used, so that we can compare with
+our model images in some other set? Are we able to reliably tell the
+difference between noise and real, but faint, features in an image? Answering
+these questions would require a controlled study in feature detection in
+images by human viewers, something that is now possible on a large scale via
+the online citizen science platform, the Zooniverse. Images of the same
+simulated scene both before and after recontruction could be shown to the
+assembled crowd, and their detection rate of various features analyzed. It is
+important to do this test with simulated data, to be able to measure absolute
+detection sensitivity rather than that relative to a set of ``expert''
+viewers.
+
+Deconvolution to obtain a lower noise, higher resolution model image is a
+procedure is most straightforwardly carried out on a single filter image. The
+point spread function varies, in general, with time and wavelength: every
+image's PSF is different. This means that any artifacts introduced by the
+deconvolution process are also likely to be different between images of
+different filters, leading to complex patterns in a color composite image.
+However, we note that combining raw images in three filters into a composite
+{\it without} deconvolving them to the same resolution will also cause
+artifacts: colored features that are not real, but simply a product
+of the three filters' images having different PSFs and depths. Combining images into
+color composites would seem to produce artifacts generically: determining 
+which method of color image production cause the most confusing set of
+artifacts will likely depend on the discoverable features present and the
+image quality, and is a matter for experiment.
+
+{\it Our ability to improve and extend our model for features in astronomical
+images depends on the quality of images available. Beyond the limits imposed
+by the image acquisition hardware, we can improve the resolution and signal to
+noise of images by inferring intermediate model images, at the price of
+introducing new, colored artifacts. However, since colored artifacts are
+introduced by forming color composites from input images with different
+resolutions and depths anyway, the benefits of deconvolution must be
+determined in context by the viewing of test, simulated images.}
+
+
+% ----------------------------------------------------------------------------
+
+\section{Practical Image Preparation and Viewing}
+
+Suppose we are given three images, labelled red green and blue, with different
+depth, and resolution. How should we best present these data to human viewers,
+to produce a homogeneous set of  maximally informative images? Based on the
+discussion above, we recognise the following useful procedures:
+
+\begin{description}
+
+\item{Resolution matching}. Infer three model images with the same angular
+resolution so that,  when they are combined, produce no new color artifacts.
+If this can be achieved, the image will appear to have been made with a system
+with constant angular resolution. All other images in the set should be
+prepared with this resolution as well, to make a homogeneous viewing set.
+
+\item{Deconvolution.} Choose the model image resolution to be as high as
+possible, while preventing the introduction of new artifacts. This trade-off
+must be understood and quantified. 
+
+\item{Standard stretching.} Display the composite images with a common stretch
+and scale such that they appear to have been taken with a color camera of
+pre-determined sensitivity.
+
+\end{description}
+
+
+% Since it is, by definition, dependent on the feature prior, information
+% content is clearly subject specific.  The informativeness of an image will
+% also be subjective because we each have our own sensor system through which to
+% pass the composite image. The color balance, contrast, brightness and dynamic
+% range of the image may need to be adjustable by the viewer to account for
+% this. However, control of these image properties may be able to be simplified
+% to a small number of parameters. These parameters would then need to be used
+% consistently on all images in a set for homogeneity to be preserved: it may be
+% simplest to fix the presentation for all viewers and live with the resulting
+% scatter in discovery sensitivity.
+
+% ----------------------------------------------------------------------------
+
+\section{Testing Discovery Sensitivity in Human Viewers}
+
+Methods, experimental set up. 
+
+Test images. Some specific features to discover.
+
+% Suugestion: A practical experiment would be to view a training set of N
+% images, and then measure how surprised you are by M test images. To test
+% information content, a different M images could be prepared, and the mean
+% surprise level measured and compared to what it was before.  Surprise could be
+% measured by questionnaire - did you see the faint blue streak? 
+
+% ----------------------------------------------------------------------------
+
+
+
+
+
+
+
+\end{document}
