@@ -8,6 +8,7 @@ from OSMethods import file_seek
 import time
 import getopt
 import os
+import scipy #
 from sys import argv
 
 	
@@ -86,7 +87,7 @@ def main(argv):
 	psf_width=None
 	file_string="CFHTLS*sci.fits"
 	krn_size=15
-	
+		
 	## Search for flags		   
 	for o,a in opts:
 		if o in ("-h", "--help"):
@@ -107,7 +108,7 @@ def main(argv):
 			
 	##--------------------------------------------------------------------
 	
-	## Input a collection of files or directory?
+	## Is input a collection of files or directory?
 	## filelist is a list of raw image files.
 	filelist=[]
 	for arg in args:
@@ -138,15 +139,25 @@ def single_deconvolve(filelist, krn_size, psf_width, vb):
 		## Run PSFEx to generate model image of PSF
 		psf_obs = SD.PSFEx(catfile, "snap", vb)
 		
+		##--------------------------------------------------------------------
+		
 		## Intermediate step: convert PSF image to an array
 		psf_obs = IM.pngcropwhite(IM.fits_pix(psf_obs))
 		
+		##--------------------------------------------------------------------		
+		
 		## Make target psf array
-		gaussparams = list(DT.moments(psf_obs))
+		gaussparams = DT.moments(psf_obs)
 		if type(psf_width) is float:			
 			gaussparams[1]=gaussparams[2]=psf_width#AsecToPix(psf_width,infile)
 		psf_ref = DT.Gauss_2D(*gaussparams)
-		## Calculate kernel array
+		#scipy.misc.imsave("./ref_"+str(psf_width)+".png",psf_ref)
+		
+		##--------------------------------------------------------------------		
+		
+		## Calculate deconvolution-kernel array
+			## Kernel size = psf width -- assume this is ~ correlation length-scale
+		krn_size = 3*int(max(gaussparams[1:3]))	### ONLY APPROPRIATE when using simdec
 		kernarr = DT.get_kernel(psf_obs, psf_ref,[krn_size,krn_size],vb)	
 		## Deconvolve image
 		DT.deconvolve_image(infile, kernarr, vb)
@@ -155,7 +166,7 @@ def single_deconvolve(filelist, krn_size, psf_width, vb):
 	
 ##============================================================
 
-### WORKING ON THIS
+### WORKING ON THIS ### NEEDS UPDATING
 def simultaneous_deconvolve(filelist, krn_size, vb):
 	
 	s2_max = 0.0

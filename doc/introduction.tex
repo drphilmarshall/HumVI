@@ -7,6 +7,15 @@
 %=================================================
 
 \usepackage{amsmath,amssymb}
+\usepackage[round]{natbib}
+\usepackage{aas_macros}
+\usepackage{xspace}
+
+%=================================================
+
+\def\HST{HST\xspace}
+
+%=================================================
 
 \title{Discovery Sensitivity in Human Viewable Images}
 \author{Cato Sandford\thanks{\texttt{cato@nyu.edu}},
@@ -32,8 +41,7 @@ galaxies, nebulae, star clusters, supernovae and so on, appear readily to
 experienced viewers as they inspect new images (citation
 required\footnote{Cato: examples here could include  Messier, SN detections by
 amateurs}); our understanding of  the structure of, for example, galaxies can
-be improved by studying their morphology, by eye (citation
-required\footnote{Cato: find refs to galaxy morphology reviews and papers}).
+be improved by studying their morphology, by eye\footnote{{\bf Phil:} indeed, is it not true that there is sometimes little alternative if one wants to draw meaningful conclusions about galaxy structure? Perhaps it is beyond the scope here, but it may be interesting to discuss what can be done by computers and what cannot -- the question isn't really addressed head-on even in your theory paper, yet it provides a compelling motivation for this work.} \citep[e.g.][]{Lah95, Lah++95, For++11, But11}\footnote{{\bf Phil}: We really want evidence of \emph{visual} inspection being useful, hence these references. Possibly too many.}.
 Image viewing is a form of data exploration, an important step before making
 quantitative measurements. But both exploration and measurement involve data
 modeling, or inference: the viewer interprets the image in the context of a
@@ -45,7 +53,7 @@ incidence of false detections.
 One way to increase the frequency with which discoveries are made  could be to
 employ a larger number of experienced image viewers to look at images.  This
 approach is being taken by ``citizen science'' projects such as Galaxy Zoo
-(citation required\footnote{Cato,Phil: Add more zoo citations. In paper X they
+(citation required\footnote{Cato, Phil: Add more zoo citations. In paper X they
 found Y, in paper Z they found...}). In the Galaxy Zoo system, color composite
 images of galaxies are presented to large numbers of viewers, who carry out
 visual morphological studies guided by a short questionnaire. The viewers have
@@ -70,8 +78,7 @@ coming online have the potential to change that. A number of optical and near
 infra red imaging surveys are planned for the next decade that together have
 been predicted to contain over 10,000 new gravitational lenses, an increase in
 sample size relative to the present day of around two orders of magnitude
-(citation required\footnote{Cato: Read and cite Oguri \& Marshall 2010, Pawase
-et al 2012, LSST science book, Euclid Red Book, and others}). Most of these
+\citep[e.g.][]{O+M10, Paw++12}\footnote{Note that the discoveries of \citet{Paw++12} were from dedicated visual inspection of \HST images by two astronomers.} \footnote{Cato: LSST science book, Euclid Red Book, and others}. Most of these
 surveys will be carried out on ground-based telescopes, and will be both
 multi-filter, in many cases multi-epoch, and synoptic, in order to meet a wide
 range of different science requirements. The thousands of square degrees of
@@ -91,9 +98,8 @@ depth. The stars provide images of the imaging system point spread function
 (PSF), while our understanding of the detector and the sky background provide
 a model for the noise in the image: we can attempt to use both of these in
 reconstructing a higher quality image. There is a significant body of
-literature on this image restoration process in astronomy (citation
-required\footnote{Cato: Read and cite papers by Gull \& Skilling, Starck et
-al, Magain et al, Lucy/Richardson and refs and citations therein}). We might
+literature on this image restoration process in astronomy \citep[e.g.][]{MCS98}\footnote{Cato: Read and cite papers by Gull \& Skilling, Starck et
+al, Magain et al, Lucy/Richardson and refs and citations therein\newline \cite{N+N82, S+B84, P+P94}, }. We might
 expect algorithms like this to be important for synoptic surveys, whose
 resolution and depth varies from image to image, and from filter to filter in
 a partiular field of view. Combining raw images into a color composite will
@@ -137,10 +143,14 @@ justified?
 \end{itemize}
 
 While we focus on lensed features as our discovery targets, and the XXX
-usrvey, we hope that our results will be of interest to the astronomical
+survey, we hope that our results will be of interest to the astronomical
 community in general, and in particular to anyone who wants to see what they
 have found in the object catalog database of a large synoptic imaging survey.
 
 In Section... we...
+
+\newpage
+\bibliographystyle{plainnat}
+\bibliography{humvi}
 
 \end{document}

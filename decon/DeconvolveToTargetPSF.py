@@ -177,7 +177,7 @@ def moments(data):
 	crow = data[int(m_x), :]
 	width_x = numpy.sqrt(abs((numpy.arange(dim[1])-m_y)**2*ccol).sum()/ccol.sum())
 	width_y = numpy.sqrt(abs((numpy.arange(dim[0])-m_x)**2*crow).sum()/crow.sum())
-	return L, width_x, width_y, m_x, m_y, total
+	return [L, width_x, width_y, m_x, m_y, total]
   
 ##============================================================
 ## Generate 2D Gaussian array
@@ -280,7 +280,6 @@ def get_kernel(image1, image2, kernel_dim, vb=False):
 		
 	## Rearrange original image pixels into a suitable matrix 
 	orig = stacker(image1, *kernel_dim)
-	
 	## Shave convolved image (->processed)
 	desired_dim = numpy.array(image1.shape)-numpy.array(kernel_dim)+1
 	proc = shave(desired_dim, image2).flatten()
@@ -288,7 +287,8 @@ def get_kernel(image1, image2, kernel_dim, vb=False):
 	t0=time.time()	
 	## Compute kernel
 	kernel = LSsolve(orig,proc)
-	if vb: print "DeconvolveToTargetPSF.py: get_kernel: kernel computation took",round(time.time()-t0,2),"seconds."
+	if vb: print "DeconvolveToTargetPSF.py: get_kernel: \
+								kernel computation took",round(time.time()-t0,2),"seconds."
 	
 	## Normalise and shape
 	kernel[kernel<cutoff] = 0.0
@@ -312,10 +312,15 @@ def stacker(img_arr, krn_h,krn_w):
 	stacked = numpy.zeros([numrows, numcols])
 	
 	## Loop over rows (i) in the new array
-	i,j,k=0,0,0
+	i=0;j=0;k=0
 	while k<numrows:
 		## Each row in new array is a kernel-shaped slice from old
-		stacked[k,:] = img_arr[j:j+krn_w,i:i+krn_h].flatten()
+		try:
+			stacked[k,:] = img_arr[j:j+krn_w,i:i+krn_h].flatten()
+		except ValueError:
+			print "DeconvolveToTargetPSF.py: stacker: kernel larger than PSF image! Abort."
+			stacker(img_arr, *img_arr.shape)
+			return None
 		i+=1
 		k+=1
 		## Move down a row in original and start from column 0
@@ -383,35 +388,6 @@ def sympysolve(X,y):
 ## 
 
 
-
-##============================================================
-##============================================================
-## Reconvolution - check
-##============================================================
-##============================================================
-## Convolves image1 (=filename) with kernel and compares with image2
-def reconvolve(image1, image2, kernel):
-	
-	## Read in images & kernel and process into shape
-	arr1 = pngcropwhite(png_pix(image1))
-	kernel = numpy.loadtxt(kernel)
-	newdim = numpy.array(arr1.shape)-numpy.array(kernel.shape)+1
-	arr2 = shave(newdim, pngcropwhite(png_pix(image2)))
-	
-	## Reconvolved image -- should be integer array
-	recon = numpy.around(convolve(arr1, kernel, mode="valid"))
-	
-	## Residue should be 0
-	residue = recon-arr2
-	
-	## Visualise residue
-	from pylab import imshow, show, colorbar
-	imshow(residue)
-	#colorbar()
-	show()
-	
-	return
-
 ##============================================================
 ##============================================================
 ## Total Image Deconvolution
@@ -429,14 +405,21 @@ def deconvolve_image(imagefile, kernel, vb=False):
 	## Read in image
 	
 	## Determine image file type and get pixels
-	imgext = os.path.splitext(imagefile)[1]
-	if imgext==".fits":
-		imgarr = fits_pix(imagefile)
-	elif imgext==".png":
-		assert False, "Cannot handle PNG format."
+	try:
+		imgext = os.path.splitext(imagefile)[1]
+		if imgext==".fits":
+			imgarr = fits_pix(imagefile)
+		elif imgext==".png":
+			assert False, "Cannot handle PNG format."
+			
+		## For some reason the image is flipped at this point, so un-flip
+		imgarr = imgarr[::-1,:]
 	
-	## For some reason the image is flipped at this point, so un-flip
-	imgarr = imgarr[::-1,:]
+	## Or, if the imagefile is already an array	
+	except AttributeError:
+		imgarr = imagefile
+
+##------------------------------------------------------------
 	
 	## Filter out noise
 	imgarr[imgarr<cutoff] = 0.0
@@ -468,7 +451,7 @@ def deconvolve_image(imagefile, kernel, vb=False):
 	scene_siz = scene_dim[0]*scene_dim[1]
 	
 ##------------------------------------------------------------
-	
+		
 	convmeth = "scipy"
 	
 	## Manual convolution
@@ -516,7 +499,6 @@ def deconvolve_image(imagefile, kernel, vb=False):
 	elif convmeth=="scipy":
 		t0=time.time()
 		## Do convolution using scipy
-		imgarr = numpy.array(imgarr, dtype="float64")
 		g_sc = convolve(imgarr, kernel, mode="valid")
 		if vb: print "DeconvolveToTargetPSF.py: deconvolve_image: SciPy convolution took",\
 					round(time.time()-t0,2),"seconds."
@@ -524,26 +506,36 @@ def deconvolve_image(imagefile, kernel, vb=False):
 	else:
 		print "LINE #"+str(lineno())+": convmeth error, abort."
 		return
-		
-##------------------------------------------------------------
 	
-	## Reshape
+##------------------------------------------------------------
+	"""
+	## Reshape ## No longer necessary
 	if g_sc.shape[0]!=scene_dim[0] or g_sc.shape[1]!=scene_dim[1]:
 		if vb: print "DeconvolveToTargetPSF.py: deconvolve_image: reshaping."
 		try:
 			g_sc = g_sc.reshape(scene_dim)
 		except ValueError:	
 			print "DeconvolveToTargetPSF.py: deconvolve_image: output has wrong shape. Investigate."
-
+	"""
 ##------------------------------------------------------------
 	
 	## Filter out (computer) noise
 	g_sc[g_sc<cutoff] = 0.0
 	
+##------------------------------------------------------------	
+
 	## Outfile name
-	imagedir,imagename = os.path.split(imagefile)
-	info = imagename[imagename.find("CFHT"):imagename.find("sci")+3]
-	outfile = imagedir+"/gDeconvolved_"+info
+	try:
+		imagedir,imagename = os.path.split(imagefile)
+		info = imagename[imagename.find("CFHT"):imagename.find("sci")+3]
+		outfile = imagedir+"/gDeconvolved_"+info
+		header = fits_hdr(imagefile)
+	except (TypeError, AttributeError):
+		## If the input was in array format
+		outfile = "deconvolved"
+		header = None
+		
+##------------------------------------------------------------	
 	
 	## Rescale (linear stretch)
 	if 1:
@@ -559,12 +551,11 @@ def deconvolve_image(imagefile, kernel, vb=False):
 	if os.path.isfile(outfile+".png"):  os.remove(outfile+".png")
 	
 	## Save image as FITS and as PNG
-	makeFITS(outfile+".fits", g_sc, fits_hdr(imagefile))
+	makeFITS(outfile+".fits", g_sc, header)
 	scipy.misc.imsave(outfile+".png", g_sc)
 	if vb: print "DeconvolveToTargetPSF.py: deconvolve_image: image saved to",outfile+".fits"
 	
-	return None
-	
+	return g_sc
 	
 	
 ##============================================================	

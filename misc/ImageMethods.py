@@ -253,9 +253,9 @@ def png_pix(filename):
 ##============================================================
 
 ## Make FITS image from array of pixels
-def makeFITS(outfile, array, head=False):
+def makeFITS(outfile, array, head=None):
 	hdu = pyfits.PrimaryHDU(array[::-1])
-	if head:
+	if head is not None:
 		hdu.header = head
 	hdu.writeto(outfile)
 	return
