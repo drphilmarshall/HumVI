@@ -26,12 +26,12 @@ Example
 -------
 I have an image in three bandpasses, called i.fits, r.fits and g.fits, in the current directory. I wish to deconvolve each such that the PSF is a circularly-symmetrical Gaussian with \sigma=2 pixels.
 
-python deconvolve.py -p 2 i.fits r.fits g.fits
+	python deconvolve.py -p 2 i.fits r.fits g.fits
 
 Now I wish to combine the three new images.
 
-python compose.py gDeconvolved_i.fits gDeconvolved_r.fits gDeconvolved_g.fits
+	python compose.py gDeconvolved_i.fits gDeconvolved_r.fits gDeconvolved_g.fits
 
 View the result:
 
-display output.png
+	display output.png
