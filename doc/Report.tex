@@ -7,23 +7,17 @@
 \usepackage{fancyhdr}	%% Header and footer
 \usepackage{amsmath, mathtools}
 \usepackage{amssymb}	%% mathbb, \ll
-%\usepackage{esint}	%% surface integral symbol
 \usepackage[round,authoryear]{natbib}	% Citations
-%\usepackage{gensymb, upgreek}
 \usepackage{ulem}	%% Underline matrices
 \usepackage[breaklinks,backref,bookmarks=true]{hyperref}
 \usepackage{enumitem}	%% Resume numbering in enumerate
-%\usepackage{varioref}	%% \vref -- says where target is
 \usepackage{url}
 \usepackage{graphicx}
-%\usepackage{caption}
 \usepackage{subcaption}
 \captionsetup{compatibility=false}
 \usepackage[usenames,dvipsnames]{color}
 \usepackage{pdfpages}
 \usepackage{xspace}	%% Guesses whether to put space after command
-%\usepackage{attachfile}	%% Attach multimedia files
-%\usepackage{listings} %% Include source code
 \usepackage{aas_macros} %% Journal control sequences
 
 %--------------------------------------------------
@@ -33,18 +27,19 @@
 \renewcommand{\headrulewidth}{0.0pt}
 \rfoot{Cato Sandford}
 \lfoot{Summer 2012}
+
 %%--------------------------------------------------
-\def\kB{\ensuremath{k_{\rm B}}\xspace}
+%% Maths macros
+\def\HST{HST\xspace}
 \def\psfobs{\ensuremath{{\rm PSF_{obs}}}\xspace}
 \def\psfref{\ensuremath{{\rm PSF_{ref}}}\xspace}
 %%--------------------------------------------------
 %% Language macros
-\def\etc{{\&c.}\xspace}	% Not italicised
+\def\etc{{\&c.}\xspace}
 \def\th{\textsuperscript{th}\xspace}
 \def\ra{\ensuremath{\rightarrow}\xspace}
 %%--------------------------------------------------
-%% Editing Macros
-\def\wspace{\textcolor{white}{Lorem ipsum}}
+%% Editing macros
 \def\TODO#1{ {\color{red}{\bf TODO: {#1}}}\xspace}
 \def\MORE{{\color{red}{\bf MORE}}\xspace}
 \def\REF{{\color{OliveGreen}{\bf REF}}\xspace}
@@ -52,8 +47,8 @@
 
 
 %% Top matter
-\title{Report\\}
-\author{Cato Sandford\thanks{Department of Physics, New York University, USA; \texttt{cato@nyu.edu}}}
+\title{Discovery Sensitivity in Human Viewable Images}
+\author{Cato Sandford\thanks{Department of Physics, New York University, USA; \texttt{cato@nyu.edu}}, Phil Marshall, David Hogg}
 \date{\today}
 
 %%-------------------------------------------------
@@ -61,8 +56,7 @@
 \begin{document}
 
 \maketitle
-
-\wspace\newline\wspace\newline
+\vspace{1cm}
 
 
 \begin{abstract}
@@ -85,7 +79,124 @@ A sketch of my project with DWH and PJM: image deconvolution and colour-composit
 %%=================================================
 %% Introduction
 %%=================================================
+
 \section{Introduction}
+
+In astronomy, as in many other fields of science, discoveries can be made by
+simply looking at images. New and unusual astronomical objects, such as
+galaxies, nebulae, star clusters, supernovae and so on, appear readily to
+experienced viewers as they inspect new images \citep[a recent example is the amateur discovery of a quadruple star system, reported in][]{PH12}; our understanding of  the structure of, for example, galaxies can
+be improved by studying their morphology, by eye\footnote{{\bf Phil:} indeed, is it not true that there is sometimes little alternative if one wants to draw meaningful conclusions about galaxy structure? Perhaps it is beyond the scope here, but it may be interesting to discuss what can be done by computers and what cannot -- the question isn't really addressed head-on even in your theory paper, yet it provides a compelling motivation for this work.} \citep[e.g.][]{Lah95, Lah++95, For++11, But11}\footnote{{\bf Phil}: We really want evidence of \emph{visual} inspection being useful, hence these references. Possibly too many.}.
+Image viewing is a form of data exploration, an important step before making
+quantitative measurements. But both exploration and measurement involve data
+modeling, or inference: the viewer interprets the image in the context of a
+model for that image that they hold.  By investigating and modeling this
+viewing process, we can hope to increase the efficiency of such discoveries,
+increasing the rate at which true detections are made, and reducing the
+incidence of false detections. 
+
+One way to increase the frequency with which discoveries are made  could be to
+employ a larger number of experienced image viewers to look at images.  This
+approach is being taken by ``citizen science'' projects such as Galaxy Zoo
+(citation required\footnote{Cato, Phil: Add more zoo citations. In paper X they
+found Y, in paper Z they found...}). In the Galaxy Zoo system, color composite
+images of galaxies are presented to large numbers of viewers, who carry out
+visual morphological studies guided by a short questionnaire. The viewers have
+a wide range of experience with astronomical images, and the majority of
+viewers come to the site not having viewed many astronomical images before.
+The model for astrophysical objects that this group has is therefore
+data-driven: their ability to spot something new depends partly on their
+pre-conceived notions of what galaxies look like, but to a greater extent it
+will depend on the images they have seen in the system before. Given an
+inspection Zoo and a user base like this,  how should we prepare and present
+the color images of galaxies, to increase the probability of an interesting
+new feature being detected? This is the question we seek to answer in this
+paper, taking as our archetypal interesting features the faint arcs caused by
+gravitational lensing. 
+
+Gravitational lenses enable a wide range of science projects, providing a
+means to measure the mass distributions of  galaxies, groups and clusters,
+independent of their luminosity or dynamical state, and giving us a rare
+magnified view of the distant universe. At present almost all these projects
+are limited by the small samples of lenses known, but the wide field surveys
+coming online have the potential to change that. A number of optical and near
+infra-red imaging surveys are planned for the next decade that together have
+been predicted to contain over 10,000 new gravitational lenses, an increase in
+sample size relative to the present day of around two orders of magnitude
+(see, for example, \citet{O+M10}; \citet{Paw++12}\footnote{The lensing discoveries of \citet{Paw++12} arose from the dedicated visual inspection of \HST images by two astronomers. They note that for the next generation of telescope missions, the time-demands of their method will be (even more) impractical. But their work lends credence to the claim that visual inspection may yet make valuable contributions to source-discovery.}; \citet[chapter 12]{LSST09}; \citet[chapter 1, page 8]{ERB10}). Most of these
+surveys will be carried out on ground-based telescopes, and will be both
+multi-filter, in many cases multi-epoch, and synoptic, in order to meet a wide
+range of different science requirements. The thousands of square degrees of
+sky imaged, and the billions of objects catalogued, will provide a huge mine
+of data to be searched for rare objects like lenses. We expect image viewing
+to play a role in this search process, most likely in the form of quality
+control inspection of the outputs of various automated detection algorithms.
+
+For an image to enable discovery, it needs to be {\it informative}: that is,
+it must have high quality, so that interesting features are visible to the
+viewer, and it must not be confusing, so that interesting features are not
+mistaken for artifacts and ignored. The quality of an astronomical image is
+only partly determined by the observing conditions, telescope, and camera: the
+image processing carried out in software is also important. We have additional
+information about the image that we can use to improve both its resolution and
+depth. The stars provide images of the imaging system point spread function
+(PSF), while our understanding of the detector and the sky background provide
+a model for the noise in the image: we can attempt to use both of these in
+reconstructing a higher quality image. There is a significant body of
+literature on this image restoration process in astronomy \citep[e.g.][]{Ric72, N+N82, S+B84, P+P93, MCS98}. We might
+expect algorithms like this to be important for synoptic surveys, whose
+resolution and depth varies from image to image, and from filter to filter in
+a partiular field of view. Combining raw images into a color composite will
+produce colored artifacts due to the mis-matched resolution in the red, green
+and blue channels; while the resulting composite will have different (mean)
+resolution than other elsewhere on the sky, leading to an inhomogeneity that
+will hinder the development of the viewers' internal feature model as they
+have to allow for the variations in image quality. However, deconvolution is
+notorious for producing image artifacts if not sufficiently regularized
+\citep[see, for example, comments at the end of section~1 of][]{MCS98}: such artifacts could
+create more problems than the deconvolution solves, reducing the probability
+of a discovery being made.  An experimental test of the sensitivity with which
+an image set enables discovery is required.
+
+In this paper we investigate a simple model-based deconvolution scheme for
+resolution matching, combined with a standardised image scaling and stretch,
+producing homogenized sets of color composites for inspection and then testing
+their sensitivity for lensed feature detection by viewers in the Galaxy Zoo.
+Using a set of $N$ realistic simulated test images for the XXX survey 
+containing faint lensed features, we define a set of metrics that quantify
+discovery sensitivity based on a test group of viewers responses, and 
+ask the following questions:
+
+\begin{itemize}
+
+\item Does simple, ``light'' deconvolution designed for making
+resolution-matched composite images introduce significant colored artifacts?
+
+\item What target matched resolution PSF width should be used in order to
+maximise discovery sensitivity in the color composite images? How does this
+relate to the input images' resolution?
+
+\item What algorithm for choosing the color composite images' stretch and
+scaling should be used, to to maximise discovery sensitivity? 
+
+\item Is there significant scatter in viewers preferences regarding image
+stretching and scaling, such that viewer control over these parameters is
+justified?
+
+\end{itemize}
+
+While we focus on lensed features as our discovery targets, and the XXX
+survey, we hope that our results will be of interest to the astronomical
+community in general, and in particular to anyone who wants to see what they
+have found in the object catalog database of a large synoptic imaging survey.
+
+In Section... we...
+
+
+%%=================================================
+%% Introduction2
+%%=================================================
+\section{Introduction2}
 
 \begin{quote}
 	I found I could say things with color and shapes that I couldn't say any other way -- things I had no words for.\\	
@@ -155,7 +266,7 @@ Mathematically, we can think of \psfobs as being composed of the reference PSF c
 	\item What else does it measure / output?
 \end{itemize}
 
-\wspace
+\vspace{1cm}
 
 \begin{itemize}
 	\item SExtractor reads in a FITS image and catalogues all the astronomical sources it contains.
@@ -176,7 +287,7 @@ Mathematically, we can think of \psfobs as being composed of the reference PSF c
 	\item What else does it measure / output?
 \end{itemize}
 
-\wspace
+\vspace{1cm}
 
 \begin{itemize}
 	\item PSFEx uses the \texttt{.cat} file from SExtractor, and estimates the PSF in the image.
@@ -215,7 +326,8 @@ Find the convolution kernels which map between these two versions of the PSF.
 \begin{itemize}
 	\item In order to deconvolve the entire image to the reference PSF, we must find an object which, when convolved with the \psfobs gives \psfref. This object is the convolution kernel, which is we retrieve by casting the deconvolution procedure as a linear algebra problem.
 \end{itemize}
-\wspace\newline\wspace\newline
+
+\vspace{2cm}
 
 Say we have two similar images: $\mathcal{A}$, which is a picture taken by a real telescope, and $\mathcal{B}$ which is the same image but deconvolved to a constant, ideal PSF $r(\vec x)$. We need to deconvolve the image  $\mathcal{A}$ by some kernel $k$ in order to leave $\mathcal{B}$ with a clean PSF of $\psfref(\vec x)$. Since convolution is a linear operation, we can cast our search for the convolution kernel in terms of a linear algebra problem. Specifically, we want to solve (for $\vec k$) an equation of the form
 \begin{equation}\label{eqn:vector}
@@ -243,7 +355,7 @@ DWH has argued semi-convincingly that we needn't make such a sacrifice in practi
 
 \begin{figure}[h]\label{fig:zeropad}
 	\centering
-	\includegraphics[width=0.33\linewidth]{Images/pad_zero_color.jpg}
+	%\includegraphics[width=0.33\linewidth]{Images/pad_zero_color.jpg}
 	\caption{An image padded with zeroes. Convolution with the 3$\times$3 stencil will now preserve image size; but at what cost?}
 \end{figure}
 
@@ -272,22 +384,22 @@ However, it would be naive to simply place our trust in SciPy -- their convoluti
 	\def\width{0.3\textwidth}
 	\centering
 	\begin{subfigure}{\width}
-		\includegraphics[width=\textwidth]{../Data/Deconvolved/gsc_CFHTLS_03_g_sci_rescaled.png}
+		%\includegraphics[width=\textwidth]{../Data/Deconvolved/gsc_CFHTLS_03_g_sci_rescaled.png}
 		\caption{Original image}
 	\end{subfigure}
 	
 	\begin{subfigure}{\width}
-		\includegraphics[width=\textwidth]{../Data/Deconvolved/gsc_CFHTLS_03_g_sci_rescaled_MAN.png}
+		%\includegraphics[width=\textwidth]{../Data/Deconvolved/gsc_CFHTLS_03_g_sci_rescaled_MAN.png}
 		\caption{Deconvolved using my procedure and a 3x3 kernel.}
 	\end{subfigure}
 	~
 	\begin{subfigure}{\width}
-		\includegraphics[width=\textwidth]{../Data/Deconvolved/gsc_CFHTLS_03_g_sci_rescaled_SCI.png}
+		%\includegraphics[width=\textwidth]{../Data/Deconvolved/gsc_CFHTLS_03_g_sci_rescaled_SCI.png}
 		\caption{Deconvolved using SciPy's procedure and a 3x3 kernel.}
 	\end{subfigure}
 	
 	\begin{subfigure}{\width}
-		\includegraphics[width=\textwidth]{../Data/Deconvolved/gsc_CFHTLS_03_g_sci_rescaled_RES.png}
+		%\includegraphics[width=\textwidth]{../Data/Deconvolved/gsc_CFHTLS_03_g_sci_rescaled_RES.png}
 		\caption{Residuals.}
 	\end{subfigure}
 	\caption{Deconvolution procedure -- a comparison of my home-made convolution algorithm and SciPy's optimised one. SciPy takes about 1/15 of the time. Note that a 3x3 kernel was used for this test, and there are obvious artefacts introduced around bright points of the image.}
@@ -307,7 +419,7 @@ Specific notes:\\
 * I used a 9x9 kernel for these images.\\
 * To change the strength of the stretch, I simply divided the upper bound (you called it "vmax") by 2 and 10.\\
 
-\includepdf[pages={1,2}]{../Data/Deconvolved/CFHTLS_03_g_Deconvolved_noisecompare.pdf}
+\includepdf[pages={1,2}]{../../Data/Deconvolved/CFHTLS_03_g_Deconvolved_noisecompare.pdf}
 
 
 %%=================================================
@@ -407,7 +519,7 @@ A summary of this part of the project (with pseudocode) follows.
 
 %\begin{figure}
 %  \centering
-%    \includegraphics[width=\linewidth]{C:/Users/adam.BEYOND/Dropbox/Hogg_2012/Code/HumVI/images/test/CFHTLS_03_lw.pdf}
+%    %\includegraphics[width=\linewidth]{C:/Users/adam.BEYOND/Dropbox/Hogg_2012/Code/HumVI/images/test/CFHTLS_03_lw.pdf}
 %  \caption{Restretched images and combination of three bands using two different procedures. \MORE specifics of algorithm / equation / pseudocode. \MORE crop.}
 %\end{figure}
 
