@@ -66,6 +66,8 @@ def decontest():
 ##============================================================
 ##============================================================
 
+## Extract kernel for convolved->clean Gaussian.
+
 ## WORKS
 
 def kerntest():
@@ -79,7 +81,7 @@ def kerntest():
 
 ##-------------------------------------------------------------
 
-## WORKS APPARENTLY
+## More complicated scenario
 
 def kerntest2():
 		
@@ -91,9 +93,10 @@ def kerntest2():
 	
 	kernarr = DT.get_kernel(nextarr, origarr, [30,30], False)	## OR SWITCH
 	scipy.misc.imsave("kern2_kern.png",kernarr)
-		
-	#dec = scipy.signal.fftconvolve(nextarr, kernarr, "valid")
-	#scipy.misc.imsave("kern2_dec.png",dec)
+	
+	dec = scipy.signal.fftconvolve(nextarr, kernarr, "valid")
+	scipy.misc.imsave("kern2_dec.png",dec)
+	
 
 	return None
 
