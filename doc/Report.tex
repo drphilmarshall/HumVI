@@ -8,11 +8,11 @@
 \usepackage{amsmath, mathtools}
 \usepackage{amssymb}	%% mathbb, \ll
 \usepackage[round,authoryear]{natbib}	%% Citations
-\usepackage{ulem}	%% Underline matrices
 \usepackage[breaklinks,backref,bookmarks=true]{hyperref}
 \usepackage{enumitem}	%% Resume numbering in enumerate
 \usepackage{url}
 \usepackage{graphicx}
+\usepackage{tabularx}
 \usepackage{subcaption}
 \captionsetup{compatibility=false}
 \usepackage[usenames,dvipsnames]{color}
@@ -319,7 +319,7 @@ Say we have two similar images: $\mathcal{A}$, which is a picture taken by a rea
 \end{equation}
 Note that $k$ is merely an image, or a template for how each pixel in $\mathcal B$ is a sum of pixels in  $\mathcal A$.
 
-Since convolution is a linear operation, we can cast our search for the convolution kernel in terms of a linear algebra problem. Specifically, we want to solve (for $\vec k$) an equation of the form
+Since convolution is a linear operation, we can cast our search for the convolution kernel in terms of a linear algebra problem. Specifically, we want to solve (for $\vec k$)\footnote{Here, and throughout the document, we abuse the vector/matrix notation. Vectors are traditionally defined by their transformation properties; here we just take them to be carfully-constructed lists of real numbers.} an equation of the form
 \begin{equation}\label{eqn:vector}
 	\vec b = \mathbf{A} \vec k,
 \end{equation}
@@ -360,19 +360,21 @@ DWH has argued semi-convincingly that we needn't make such a sacrifice in practi
 %%=================================================
 \subsection{Full Image Deconvolution}
 
-In section~\ref{sec:kernel} we found the kernel $k$ which would transform a messy PSF image into a nice symmetrical one with known properties (\psfobs $\rightarrow$ \psfref.). This same kernel can be used to transform an entire image with the observed PSF, $\mathcal C$, into the same image\footnote{Modulo concerns raised in section~\ref{sec:shave}.} with the target PSF, $\mathcal D$. To do this, we must perform the operation
+\subsubsection{Na\"ive ``First Look'}
+
+In section~\ref{sec:kernel} we found the kernel $k$ which would transform a messy PSF image into a nice symmetrical one with known properties (\psfobs $\rightarrow$ \psfref.). This same kernel can be used to transform an entire image with the observed PSF, $\mathcal A$, into the same image with the target PSF, $\mathcal B$. To do this, we can perform the operation
 \begin{align}
-	\mathcal{D} = k \ast \mathcal{C},
+	\mathcal{B} &= k \ast \mathcal{A},
 	\shortintertext{or, in the language of linear algebra,}
-	\vec{d} = \uuline{K} \vec{c}.\label{eqn:convolve}
+	\vec{b} &= \mathbf{K} \vec{a}.\label{eqn:simple_deconvolve}
 \end{align}
-The image vectors $\vec d$ and $\vec c$ have the same form as discussed earlier -- they are simply flattened versions of the pixel-arrays. The kernel matrix $\uuline K$ is more tricky; but after some refelxion, it transpires that $\uuline K$ is a sparse, upper-diagonal matrix where every row is identical, but shifted right by one element with respect to the row above. (Note that in practice it is unweildy and prohibitively expensive to store all the zero-entries of the $\uuline K$ matrix -- we have to be a little bit clever about how to store and manipulate the relevant information.)
+The image vectors $\vec b$ and $\vec a$ have the same form as discussed earlier -- they are simply flattened versions of the pixel-arrays. The kernel matrix $\mathbf K$ is more tricky; but after some refelxion, it transpires that $\mathbf K$ is a sparse, upper-diagonal matrix where every row is identical, but shifted right by one element with respect to the row above. (Note that in practice it is unweildy and prohibitively expensive to store all the zero-entries of the $\mathbf K$ matrix -- we have to be a little bit clever about how to store and manipulate the relevant information.)
 
 Once we have constructed an appropriate kernel matrix and multiplied it by the (observed) image vector, we are done.
 
-Alternatively, we can simply use a pre-existing module which performs the convolution for us: \texttt{scipy.signal.fftconvolve} does the job nicely. We can even tell this module to reduce the size of the convolved image (\texttt{mode="valid"}).
+Alternatively, we can simply use a pre-existing module which performs the convolution for us: \texttt{scipy.signal.fftconvolve} does the job nicely. We can even tell this module to reduce the size of the convolved image (\texttt{mode="valid"}), in keeping with the concerns raised in section~\ref{sec:shave} .
 
-However, it would be naive to simply place our trust in SciPy -- their convolution method may be subtly different from the one we wish to use for scientific inference. Thus, we cannot escape having to implement the concolution procedure of equation~\ref{eqn:convolve}. Figure~\ref{fig:deconvolution_comparison} shows a comparison, with residuals. Leaving aside the image artefacts from using a small convolution kernel (\MORE FIX!), we can see that the two methods do not agree completely. This is worrying, but according to DWH the problem is almost certainly with my implementation rather than SciPy's, and I am inclined to agree (it might be a simple indexing error). Combined with the fact that SciPy is around 15 times faster, it makes little sense to labour on with my code; so we adopt the SciPy convolution module.
+However, it would be naive to simply place our trust in SciPy -- their convolution method may be subtly different from the one we wish to use for scientific inference. Thus, we cannot escape having to implement the concolution procedure of equation~\ref{eqn:simple_deconvolve}. Figure~\ref{fig:deconvolution_comparison} shows a comparison, with residuals. Leaving aside the image arteficts from using a small convolution kernel (\MORE FIX!), we can see that the two methods do not agree completely. This is worrying, but according to DWH the problem is almost certainly with my implementation rather than SciPy's, and I am inclined to agree (it might be a simple indexing error). Combined with the fact that SciPy is around 15 times faster, it makes little sense to labour on with my code; so we adopt the SciPy convolution module.
 
 \FIG{Comparison of my convolution algorithm with SciPy's.}
 
@@ -398,9 +400,60 @@ However, it would be naive to simply place our trust in SciPy -- their convoluti
 		\includegraphics[width=\textwidth]{../../Data/Deconvolved/gsc_CFHTLS_03_g_sci_rescaled_RES.png}
 		\caption{Residuals.}
 	\end{subfigure}
-	\caption{Deconvolution procedure -- a comparison of my home-made convolution algorithm and SciPy's optimised one. SciPy takes about 1/15 of the time. Note that a 3x3 kernel was used for this test, and there are obvious artefacts introduced around bright points of the image.}
+	\caption{Deconvolution procedure -- a comparison of my home-made convolution algorithm and SciPy's optimised one. SciPy takes about 1/15 of the time. Note that a 3x3 kernel was used for this test, and there are obvious artifacts introduced around bright points of the image.}
 	\label{fig:deconvolution_comparison}
 \end{figure}
+
+So why does the heading for this subsection include the word ``na\"ive''? Have we done something wrong?
+\begin{itemize}
+	\item Over-constrained -- solution could be messy
+	\item Want to smooth solution
+\end{itemize}
+
+
+\subsubsection{A Better Method}
+
+Here we adopt the robust and powerful method due to \citet{MCS98}. Instead of finding the deconvolved image, $\mathcal A$, by minimising the residuals for equation~\ref{eqn:simple_deconvolve}, we split the final image into its point sources -- amplitude-$\alpha$ $\delta$-functions at (2D) position $c$ --, and a smooth background, $h$; then we minimise the functional $S\left[\{\alpha\},\{c\}, h \,\middle|\, {d}, {\sigma}, {r}, {k}, \lambda \right]$ with respect to its left-hand arguments:
+\begin{align}
+	S = \sum_{i=1}^N \frac{1}{\sigma_i^2} \left[ \sum_{j=1}^N k_{ij} \left(h_j +\sum_{k=1}^M \alpha_k r(x_j-c_k)\right) - d_i \right]^2\
+			+\; \lambda\sum_{i=1}^N \left( h_i - \sum_{j=1}^N r_{ij}h_j \right)^2 \label{eqn:minimisation_functional}
+\end{align}
+(equation~(7) of their paper). This requires some explanation. First, what do all the symbols denote?\footnote{Note that in the argument of $S$ above, we've dropped the vector notations. Indeed, the form of the variables is somewhat elastic, depending on how we choose to set up the problem. So although it might be tempting at first glance to assume the single-index variables of equation~\ref{eqn:minimisation_functional} are like vectors and the double-index variables are like matrices, we actually have some freedom in how to express them. For instance, the ``vector'' $d_i$ represents the original \emph{2D} image. So for understanding what's going on in the equation, we should realy be considering the number of independent elements each object has.} This is listed in table~\ref{tbl:minimisation_functional}.
+
+\begin{center}
+	\begin{table}[h!]
+		\begin{tabularx}{\textwidth}{l | X | X}
+			\hline
+			Variable	& Description & Role\\ \hline
+			%
+			$S$ 	& A functional & For minimisation\\ \hline
+			%
+			$\sigma_i$ & Standard deviation of the image at pixel $i$. Has $N$ elements. & Calculated from the data.\\ \hline
+			%
+			$k_{ij}$	& Deconvolution kernel. Has a user-specified number of elements. & Calculated here from PSFEx\ldots\\ \hline
+			%
+			$h_j$		& The pixels of the ``true'' image or scene which describe everything except the point sources. $N$ elements. & This is an object to be found via the minimisation procedure. Requires an intial guess, $h^0$.\\ \hline
+			%
+			$\alpha_k$	& Enodes the intenitisties of the image's point sources. Number of elements, $M$ obviously depends on the image. & This is an object to be found via the minimisation procedure. Requires an intial guess, $a^0$.\\ \hline
+			%
+			$c_k$	& Enodes the positions of the image's point sources. Since each source has two coordinates, $c$ has $2M$ elements. & This is an object to be found via the minimisation procedure. Requires an intial guess, $c^0$.\\ \hline
+			%
+			$r(x_j)$	& The target PSF. Size is set by user. & From PSFEx\ldots\\ \hline 
+			%
+			$d_i$	& Original image, or data. & What we start with.\\ \hline
+			%
+			$\lambda$	& A lagrange multiplier. & Set by the user to ensure the deconvolved image has the right statistical properties.\\
+			%
+			\hline
+		\end{tabularx}
+		\caption{Listing the variables in equation~\ref{eqn:minimisation_functional}, from left to right.}
+		\label{tbl:minimisation_functional}
+	\end{table}
+\end{center}
+
+Now we can begin to see some structures.
+
+We can re-express the minimisational functional in terms of a linear algebra operation.
 
 
 %%=================================================
