@@ -413,12 +413,12 @@ So why does the heading for this subsection include the word ``na\"ive''? Have w
 
 \subsubsection{A Better Method}
 
-Here we adopt the robust and powerful method due to \citet{MCS98}. Instead of finding the deconvolved image, $\mathcal A$, by minimising the residuals for equation~\ref{eqn:simple_deconvolve}, we split the final image into its point sources -- amplitude-$\alpha$ $\delta$-functions at (2D) position $c$ --, and a smooth background, $h$; then we minimise the functional $S\left[\{\alpha\},\{c\}, h \,\middle|\, {d}, {\sigma}, {r}, {k}, \lambda \right]$ with respect to its left-hand arguments:
+Here we adopt the more robust and powerful method due to \citet{MCS98}. Instead of finding the deconvolved image, $\mathcal A$, by minimising the residuals for equation~\ref{eqn:simple_deconvolve}, we split the final image into its point sources -- amplitude-$\alpha$ $\delta$-functions at (2D) position $c$ --, and a smooth background, $h$; then we minimise the functional $S\left[\{\alpha\},\{c\}, h \,\middle|\, {d}, {\sigma}, {r}, {k}, \lambda \right]$ with respect to its left-hand arguments:
 \begin{align}
 	S = \sum_{i=1}^N \frac{1}{\sigma_i^2} \left[ \sum_{j=1}^N k_{ij} \left(h_j +\sum_{k=1}^M \alpha_k r(x_j-c_k)\right) - d_i \right]^2\
 			+\; \lambda\sum_{i=1}^N \left( h_i - \sum_{j=1}^N r_{ij}h_j \right)^2 \label{eqn:minimisation_functional}
 \end{align}
-(equation~(7) of their paper). This requires some explanation. First, what do all the symbols denote?\footnote{Note that in the argument of $S$ above, we've dropped the vector notations. Indeed, the form of the variables is somewhat elastic, depending on how we choose to set up the problem. So although it might be tempting at first glance to assume the single-index variables of equation~\ref{eqn:minimisation_functional} are like vectors and the double-index variables are like matrices, we actually have some freedom in how to express them. For instance, the ``vector'' $d_i$ represents the original \emph{2D} image. So for understanding what's going on in the equation, we should realy be considering the number of independent elements each object has.} This is listed in table~\ref{tbl:minimisation_functional}.
+(equation~(7) of their paper). This requires some explanation. First, what do all the symbols denote?\footnote{Note that in the argument of $S$ above, we've dropped the vector/matrix notations. Indeed, the form of the variables is somewhat elastic, depending on how we choose to set up the problem. So although it might be tempting at first glance to assume the single-index variables of equation~\ref{eqn:minimisation_functional} are like vectors and the double-index variables are like matrices, we actually have some freedom in how to express them. For instance, the ``vector'' $d_i$ represents the original \emph{2D} image. So in order to understand what's going on in the equation, we should keep in mind the \emph{number} of independent elements each object has.} This is listed in table~\ref{tbl:minimisation_functional}.
 
 \begin{center}
 	\begin{table}[h!]
@@ -451,10 +451,55 @@ Here we adopt the robust and powerful method due to \citet{MCS98}. Instead of fi
 	\end{table}
 \end{center}
 
-Now we can begin to see some structures.
+Now we know what all the symbols mean, we can begin to see some structures.
+\begin{equation}
+	\left(h_j +\sum_{k=1}^M \alpha_k r(x_j-c_k)\right)
+\end{equation}
+is simply our reconstructed image, with background and point sources, while
+\begin{equation}
+	s_{ij}\left(h_j +\sum_{k=1}^M \alpha_k r(x_j-c_k)\right)
+\end{equation}
+``re-blurs'' the reconstruction for comparison with the data, $d_i$. The first term of equation~\ref{eqn:minimisation_functional} is therefore a $\chi^2$ term for our model and our data, albeit with the model decomposed into two pieces.
 
-We can re-express the minimisational functional in terms of a linear algebra operation.
+The second term is included to ensure smoothness of the background\ldots \MORE
 
+We can re-express the minimisational functional in terms of a linear algebra operation. The most immediate way is
+\begin{align}
+	S = \left\{ \frac{1}{\vec\sigma} \left[ \mathbf k \left( \vec{h} + \vec{\alpha^\prime} \ast r \right) - \vec{d} \right]\right\}^2\
+			+\; \lambda \left( \vec{h} - \mathbf{r}\vec{h} \right)^2, \label{eqn:minimisation_functional_linalg}
+\end{align}
+where, to be totally explicit, we've listed all the variables again in table~\ref{tbl:minimisation_functional_linalg}.
+
+\begin{center}
+	\begin{table}[h!]
+		\begin{tabularx}{\textwidth}{l | X | X}
+			\hline
+			Variable	& Description & Comments\\ \hline
+			%
+			$S$ 	& A functional & For minimisation\\ \hline
+			%
+			$\vec\sigma$ & Standard deviation of image at each pixel. A vector of length $N$. & Calculated from the data.\\ \hline
+			%
+			$\mathbf k$	& Deconvolution kernel. Has a user-specified number of independent elements, but is here represented by an $N\!\times\!N$ matrix. & Calculated from PSFEx\ldots\\ \hline
+			%
+			$\vec h$		& The pixels of the ``true'' image or scene which describe everything except the point sources. Vector of length $N$. & This is an object to be found via the minimisation procedure. Requires an intial guess, $\vec h^0$.\\ \hline
+			%
+			$\vec{\alpha^\prime}$	& Enodes the intenitisties of the image's point sources. Number of elements, $M$ obviously depends on the image. & This is an object to be found via the minimisation procedure. Requires an intial guess, $\vec{\alpha^\prime}^0$.\\ \hline
+			%
+			$r$	& The target PSF. Size is set by user. & From PSFEx\ldots\\ \hline 
+			%
+			$\vec d$	& Original image, or data. $N$-element vector. & What we start with.\\ \hline
+			%
+			$\lambda$	& A lagrange multiplier. & Set by the user to ensure the deconvolved image has the right statistical properties.\\
+			%
+			\hline
+		\end{tabularx}
+		\caption{Listing the variables in equation~\ref{eqn:minimisation_functional_linalg}, from left to right.}
+		\label{tbl:minimisation_functional_linalg}
+	\end{table}
+\end{center}
+
+We can still readily see the structure of what's going on. \MORE
 
 %%=================================================
 %% Test Noise Properties
