@@ -40,7 +40,7 @@
 \def\ra{\ensuremath{\rightarrow}\xspace}
 %%--------------------------------------------------
 %% Editing macros
-\def\TODO#1{ {\color{red}{\bf TODO: {#1}}}\xspace}
+\def\TODO#1{ {\color{black}{\bf TODO: {#1}}}\xspace}
 \def\MORE{{\color{red}{\bf MORE}}\xspace}
 \def\REF{{\color{OliveGreen}{\bf REF}}\xspace}
 \def\FIG#1{{\bf FIGURE: }{#1}}
@@ -465,7 +465,7 @@ The second term is included to ensure smoothness of the background\ldots \MORE
 
 We can re-express the minimisational functional in terms of a linear algebra operation. The most immediate way is
 \begin{align}
-	S = \left\{ \frac{1}{\vec\sigma} \left[ \mathbf k \left( \vec{h} + \vec{\alpha^\prime} \ast r \right) - \vec{d} \right]\right\}^2\
+	S\left[\vec{\alpha^\prime}, \vec{h}\right] = \left\{ \frac{1}{\vec\sigma} \left[ \mathbf k \left( \vec{h} + \vec{\alpha^\prime} \ast r \right) - \vec{d} \right]\right\}^2\
 			+\; \lambda \left( \vec{h} - \mathbf{r}\vec{h} \right)^2, \label{eqn:minimisation_functional_linalg}
 \end{align}
 where, to be totally explicit, we've listed all the variables again in table~\ref{tbl:minimisation_functional_linalg}.
@@ -490,7 +490,7 @@ where, to be totally explicit, we've listed all the variables again in table~\re
 			%
 			$\vec d$	& Original image, or data. $N$-element vector. & What we start with.\\ \hline
 			%
-			$\lambda$	& A lagrange multiplier. & Set by the user to ensure the deconvolved image has the right statistical properties.\\
+			$\lambda$	& A Lagrange multiplier. & Set by the user to ensure the deconvolved image has the right statistical properties.\\
 			%
 			\hline
 		\end{tabularx}
@@ -499,7 +499,39 @@ where, to be totally explicit, we've listed all the variables again in table~\re
 	\end{table}
 \end{center}
 
-We can still readily see the structure of what's going on. \MORE
+We can still readily see the structure of what's going on (see comments following equation~\ref{eqn:minimisation_functional}). One issue that immediately presents itself is how very expensive the minimisation procedure is. Each step will require the evaluation of $S$ at least \emph{five} \TODO{Cato: is this true?} times (for calculating $S$ and its numerical derivatives); while each step requires three matrix-vector multiplications, which require $N$ operations ($N$, remember, is the number of pixels, which could easily be more than a million). So at the end of the day, we are left with a minimisation procedure which needs around 15$N$~ops per iteration. Using the conjugate gradient method, we may be looking at up to $N$ iterations, giving us a grand total of $\mathcal{O}(10)N^2$ operations per image. \TODO{any improvement on this would be good}.
+
+Another obvious question which must be answered is whence the initial guess for the point and extended sources, $\vec{\alpha^\prime}$ and $\vec{h}$, come. Note that it is not enough to simply use the original image, since our algorithm needs the point sources to be distinguished from everything else. We have already generated a catalogue of all the sources (along with their coordinates) in our image using SExtractor.  We've also used PSFEx to determine which of the sources were point sources -- if we can extract this information from the software \TODO{Cato: look into this, otherwise whole algorithm will be much slower}, it should be possible to make a very good estimate for the initial image.
+
+------
+
+Now we outline the steps required to minimise the functional $S$ from equation~\ref{eqn:minimisation_functional_linalg}.
+
+\begin{enumerate}
+	\item Generate an initial guess for $\vec{\alpha^\prime}$ and $\vec{h}$ using output from SExtractor and PSFEx.
+	\item Calculate $S$ from equation~\ref{eqn:minimisation_functional_linalg} with these values (pseudocode below).\label{pnt:calcS}
+	\item Calculate also the derivatives of $S$ with respect to the parameters of interest, using the conjugate gradient method (pseudocode below).\label{pnt:calcSder}
+	\item Apply steps~\ref{pnt:calcS} and~\ref{pnt:calcSder} iteratively until the minimum of $S$ is found.
+	\item Compute the residual, that is the ``reconvolved'' image ($\mathbf k\left(\vec{h}+\vec{\alpha^\prime}\ast r\right)$) minus the original image. Check whether this is roughly equal to $N$.
+	\begin{itemize}
+		\item If so, we are done.
+		\item If not, we must allow $\lambda$ to vary over the image, i.e. $\lambda\ra\lambda(\vec x)$. Recompute residuals until their sum $\simeq N$.
+	\end{itemize}
+\end{enumerate}
+
+Here is some pseudocode for calculating $S$.
+
+\texttt{
+\begin{enumerate}
+	\item
+\end{enumerate}
+}
+
+Here is pseudocode for calculating the derivatives of $S$.
+
+
+\TODO{Cato:} read about conjugate gradient method: \citet{She94}
+
 
 %%=================================================
 %% Test Noise Properties
