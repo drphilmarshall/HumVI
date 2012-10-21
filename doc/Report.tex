@@ -9,6 +9,7 @@
 \usepackage{amssymb}	%% mathbb, \ll
 \usepackage[round,authoryear]{natbib}	%% Citations
 \usepackage[breaklinks,backref,bookmarks=true]{hyperref}
+\usepackage{varioref}
 \usepackage{enumitem}	%% Resume numbering in enumerate
 \usepackage{url}
 \usepackage{graphicx}
@@ -224,9 +225,10 @@ As mentioned in the introduction, it is frequently possible and indeed desirable
 \begin{enumerate}
 	\item Identify the astronomical sources in a FITS image.
 	\item Find the point sources, and from these estimate the PSF of the image. We call this the ``observed PSF'', or \psfobs.\label{pnt:getpsf}
-	\item Generate a symmetrical\footnote{Well, not actually circularly symmetric.} target PSF for the image, using the dimensions and flux properties of the image PSF of point~\ref{pnt:getpsf}. We call this the ``reference PSF'' or \psfref.\label{pnt:PSF0}
+	\item Generate a symmetrical\footnote{Well, not actually circularly symmetric.} target PSF for the image, using the dimensions and flux properties of the image PSF from point~\ref{pnt:getpsf}. We call this the ``reference PSF'' or \psfref.\label{pnt:PSF0}
 	\item Create an object which maps the observed PSF to the reference PSF. This object is called the ``kernel'' and the mapping procedure is convolution.
 	\item Apply this procedure to the original image; this should correlate all the pixels in such a way as to rid the image of asymmetrical blurriness and replace it with a blurriness of known properties.
+	\item Finally, regularise the image by using some smoothing procedure.\MORE
 \end{enumerate}
 
 The reader may be confused at this point as to why, if we can correctly calculate the PSF of an image, we don't simply do away with the blurriness altogether -- i.e. find a kernel which maps the PSF to a point. This would be a ``hard deconvolution'', a procedure which is compellingly discouraged by the work of \cite{MCS98} (see appendix~\ref{sec:MCS98notes} for more discussion of this paper). Following this work, we may endeavour to obtain better knowledge of the sky by reducing the PSF, but we must avoid inadvertently violating the sampling theorem, which would certainly happen if we attempted a hard deconvolution.
@@ -288,22 +290,17 @@ Mathematically, we can think of \psfobs as being composed of the reference PSF c
 %%=================================================
 %% PSF Generation
 %%=================================================
-\subsection{Generating an Idealised PSF}
+\subsection{Generating a Target PSF}
 
-\begin{itemize}
-	\item Find moments of PSFEx \psfobs (2D)
-	\item Find total flux
-	\item Size of PSF image
-	\item Plug into a 2D Gaussian 
-	\item Generate FITS files
-\end{itemize}
+We are now equipped with an image which estimates the PSF of our data, \psfobs. We now have to make a decision about what our reference PSF should look like.
 
-Some comments on generating 
+In a (possibly misguided) bid to keep things simple, I prescribed ``PSF-tidying'' rather than a traditional light deconvolution. This means that \psfref has the same size as \psfobs, but a different shape -- specifically, a 2D Gaussian.
+\begin{enumerate}
+	\item Find the centre and the two principal widths (variances) of the \psfobs image.
+	\item Use this information to make a 2D Gaussian with the same position and widths.
+	\item Save as a FITS file.
+\end{enumerate}
 
-\begin{itemize}
-	\item We wish to deconvolve the image such that it has a constant, symmetrical PSF of finite width.
-	\item My code reads in the FITS file containing the PSF; it calculates the total flux, and the width of the PSF in the $y$ and $x$ directions. Then it generates the image of a 2D Gaussian which shares these properties. This is the ``ideal'' PSF.
-\end{itemize}
 
 %%=================================================
 %% Kernel
@@ -359,8 +356,7 @@ DWH has argued semi-convincingly that we needn't make such a sacrifice in practi
 %% Deconvolution
 %%=================================================
 \subsection{Full Image Deconvolution}
-
-\subsubsection{Na\"ive ``First Look'}
+\label{sec:imdec}
 
 In section~\ref{sec:kernel} we found the kernel $k$ which would transform a messy PSF image into a nice symmetrical one with known properties (\psfobs $\rightarrow$ \psfref.). This same kernel can be used to transform an entire image with the observed PSF, $\mathcal A$, into the same image with the target PSF, $\mathcal B$. To do this, we can perform the operation
 \begin{align}
@@ -374,9 +370,9 @@ Once we have constructed an appropriate kernel matrix and multiplied it by the (
 
 Alternatively, we can simply use a pre-existing module which performs the convolution for us: \texttt{scipy.signal.fftconvolve} does the job nicely. We can even tell this module to reduce the size of the convolved image (\texttt{mode="valid"}), in keeping with the concerns raised in section~\ref{sec:shave} .
 
-However, it would be naive to simply place our trust in SciPy -- their convolution method may be subtly different from the one we wish to use for scientific inference. Thus, we cannot escape having to implement the concolution procedure of equation~\ref{eqn:simple_deconvolve}. Figure~\ref{fig:deconvolution_comparison} shows a comparison, with residuals. Leaving aside the image arteficts from using a small convolution kernel (\MORE FIX!), we can see that the two methods do not agree completely. This is worrying, but according to DWH the problem is almost certainly with my implementation rather than SciPy's, and I am inclined to agree (it might be a simple indexing error). Combined with the fact that SciPy is around 15 times faster, it makes little sense to labour on with my code; so we adopt the SciPy convolution module.
+\TODO{Cato: is this actually the choice? Where could \texttt{scipy.sparse} come in?}
 
-\FIG{Comparison of my convolution algorithm with SciPy's.}
+However, it would be na\"ive to simply place our trust in SciPy -- their convolution method may be subtly different from the one we wish to use for scientific inference. Thus, we cannot escape having to implement the concolution procedure of equation~\ref{eqn:simple_deconvolve}. Figure~\vref{fig:deconvolution_comparison} shows a comparison, with residuals. Leaving aside the image arteficts from using a small convolution kernel (\MORE FIX!), we can see that the two methods do not agree completely. This is worrying, but according to DWH the problem is almost certainly with my implementation rather than SciPy's, and I am inclined to agree (it might be a simple indexing error). Combined with the fact that SciPy is around 15 times faster, it makes little sense to labour on with my code; so we adopt the SciPy convolution module.
 
 \begin{figure}
 	\def\width{0.3\textwidth}
@@ -404,148 +400,109 @@ However, it would be naive to simply place our trust in SciPy -- their convoluti
 	\label{fig:deconvolution_comparison}
 \end{figure}
 
-So why does the heading for this subsection include the word ``na\"ive''? Have we done something wrong?
+
+
+Unfortunately that isn't the end of the story, as equation~\ref{eqn:simple_deconvolve} has some important shortcomings:
+
+\begin{enumerate}
+	\item In using our recorded image to recover a ``better'' one (which bears more resmblance to the scene), we have ignored the existence of \emph{noise} in the data. This problem will be addressed in section~\vref{sec:pixvar}.
+	
+	\item The procedure outlined in this section may be highly over-determined, and so there is a lot of flexibility in the solution. Typically, this will introduce artifacts into the image, which, given the goals outlined in the introduction, would be highly unwelcome.\newline The reference image we have obtained at this point must be ``regularised'', or smoothed according to some well-motivated principles. One can find a good discussion of these principles in \citet{MCS98}: this paper is outlined in appendix~\ref{sec:MCS98notes}. Some comments on their mathematical procedure can be found in appendix~\ref{sec:MCS98procedure}. \newline Though it would be entirely possible to implement this for the current project (indeed, we have already generated much of the necessary data), it may well be overkill. Instead, a more modest regularisation scheme is proposed in section~\ref{sec:regularisation}.
+\end{enumerate}
+
+%%=================================================
+%% Image Noise
+%%=================================================
+\subsection{Pixel Variance and Noise}
+\label{sec:pixvar}
+
+Here we outline how one may address the existence of noise in our original image -- this has been hitherto ignored.
+
+First, consider how the solution $\vec y$ to the matrix equation
+\begin{equation}
+	\mathbf M \vec y = \vec b \label{eqn:matrix_eqn}
+\end{equation}
+is found. Typically we strive to minimise the sum of the squared-residuals (call this $S$) of the solution: that is, find successive values of $\vec {y_i}$ such that
+\begin{equation} \label{eqn:sum_residuals}
+	S_i = (\mathbf M \vec{y_i} - \vec b)^{\rm T}(\mathbf M \vec{y_i} - \vec b) \ra 0,
+\end{equation}
+where $i$ labels the iteration number. Clearly, if we find a vector $\vec y$ which exactly solves equation~\ref{eqn:matrix_eqn}, the square-residuals will sum to zero (moreover this solution is unique). In practice, we choose some small number $\epsilon$ such that once $S_i \leq \epsilon$, we accept the corresponding solution $\vec {y_i}$.
+
+Now if our data are noisy, or worse if there are correlations between data points, we must accomodate this into our residual-minimisation procedure.
+
+Say we know or can calculate the variance of each pixel, $\sigma_j^2$, and the covariance between pixels, $\sigma_{jk}$ ($j$ and $k$ label the pixels).  We express this information as a covariance matrix $\mathbf{C}$:
+\begin{equation}
+	\mathbf{C} =
+	\begin{pmatrix}
+		\sigma_1^2	& \sigma_{12}	& \sigma_{13}	& \ldots	& \sigma_{1N}\\
+		\sigma_{21}	& \sigma_2^2	& \sigma_{23}	& \ldots 	& \sigma_{2N}\\
+		\vdots		& \vdots 		&  \vdots		& \ddots & \vdots \\
+		\sigma_{N1}	& \sigma_{N2} 	& \sigma_{N2}	& \ldots	& \sigma_N^2
+	\end{pmatrix}
+\end{equation}
+(note that $\mathbf{C}_{jk}=\mathbf{C}_{kj}$).
+
+Including this information in the solution amounts to modifying the expression for the summed residuals, \ref{eqn:sum_residuals}, in the following way:
+\begin{equation}\label{eqn:matrix_eqn_noise}
+	S_i = (\mathbf M \vec{y_i} - \vec b)^{\rm T}\mathbf{C}^{-1}(\mathbf M \vec{y_i} - \vec b).
+\end{equation}
+\TODO{Cato: read up on this.}
+
+A good trick for achieving this result without re-writing our minimisation code is to trivially modify equation~\ref{eqn:matrix_eqn}:
+\begin{equation}
+	\mathbf M \vec y = \vec b \quad\longrightarrow\quad \mathbf{C}^{-\frac{1}{2}}\mathbf{M} \vec y = \mathbf{C}^{-\frac{1}{2}}\vec b.
+\end{equation}
+It is easy to show, using the symmetry of $\mathbf{C}$, that using this matrix equation in~\ref{eqn:sum_residuals} yields equation~\ref{eqn:matrix_eqn_noise}.
+
+%%=================================================
+\subsubsection{Noise Model}
+
+Having established that our minimisation functional, $S$, should include the data covariance matrix $\mathbf C$, we must now discuss how to calculate this matrix.
+
+The most trivial thing to do is what we have done thus far: neglect all the noise in the data. This corresponds to taking
+\begin{equation}
+	\mathbf C = \mathbb{I},
+\end{equation}
+such that all $\mathbf C$s in the above equations disappear.
+
+If we actually want to take the noise into consideration, the easiest thing to do would be to assume (i) that each pixel represents an independent measurement (i.e. $\mathbf{C}_{jk}\propto \delta_{jk}$: there are no off-diagonal elements); and (ii) that each pixel in the image has the same uncertainty $\sigma$ associated with it (this uncertainty $\sigma$ is simply the root-variance of all the pixel values). Thus,
+\begin{equation}
+	\mathbf C = \sigma^2\mathbb{I}.
+\end{equation}
+
+Increasing the sophisitcation of our model further, we could relax condition (ii) above and let different pixels have different noise levels\footnote{\TODO{Cato: what does ``heteroscedastic'' mean? Relevant?}}. This makes a lot of sense, since we'd expect brighter pixels to have higher noise. To get an idea of why this might be, consider photons from the sky arriving on a (perfect) telescope detector. This is a prototypical Poisson process, and in accordance with Poisson statistics, the mean count for a particular pixel will be equal to the variance in that pixel. In situations where there are many photons arriving at our detector (e.g. looking at bright optical sources), our Poisson distribution will become a Normal distribution; but the equality of mean and variance wil still hold. These considerations suggest the following covariance matrix:
+\begin{equation}\label{eqn:covmat}
+	\mathbf{C}_{jk} = \frac{n_j}{n}\sigma^2\delta_{jk},
+\end{equation}
+where $n_j$ is the number of counts in pixel $j$, $n$ is the total number of counts in the entire image. Note that this matrix is still diagonal, and the overall noise properties of the image are preserved.
+
+This is a pretty rudimentary model for the pixel uncertainty. A more methodical / unprejudiced procedure might be to use ``feasible generalised least squares''.
+
+Now consider condition (i) above: is it possible that the noise in pixel $j$ is correlated with the noise in pixel $k$? The answer is yes, for two reasons. First, a well-resolved source will be spread over several pixels. These pixels will have similar (high) noise levels when compared to the background, so neighbouring pixels have corellated noise. The second reason comes from considering the limitations of the detector. Take for example a CCD grid: very bright sources may saturate pixels if the exposure time is long. Charge, or photon counts, will overflow into neighbouring pixels, coupling the inensity and the noise.
+
+A covariance matrix which refelcts these considerations will have off-diagonal elements which appear in diagonal stripes directly either side of the main diagonal (representing sideways-neighbours of pixel $j$) and other diagonal stripes around $w$ elements from the main diagonal, where $w$ is the width of the image. A calculation of how these off-diagonal stripes are related to the diagonal value $j$ will depend to some extent on the intensity profile of the source which appears in $j$ and on the properties of the detector. 
+
+Still more advanced noise models will exist. But for our treatment, we will content ourselves with a covariance matrix of the form given in equation~\ref{eqn:covmat}.
+
+%%-----------------------------------------------------------------------------------------
+\subsubsection{Precomputed Covariance Matrices}
+
+Note that inclusion of this covariance matrix has an additional advantage.
 \begin{itemize}
-	\item Over-constrained -- solution could be messy
-	\item Want to smooth solution
+	\item Weight information from other sources, e.g. telescope operator who knows about bum pixels, saturated pixels
+	\item Block out missing pixels so they aren't involved in inference.
 \end{itemize}
 
 
-\subsubsection{A Better Method}
-
-Here we adopt the more robust and powerful method due to \citet{MCS98}. Instead of finding the deconvolved image, $\mathcal A$, by minimising the residuals for equation~\ref{eqn:simple_deconvolve}, we split the final image into its point sources -- amplitude-$\alpha$ $\delta$-functions at (2D) position $c$ --, and a smooth background, $h$; then we minimise the functional $S\left[\{\alpha\},\{c\}, h \,\middle|\, {d}, {\sigma}, {r}, {k}, \lambda \right]$ with respect to its left-hand arguments:
-\begin{align}
-	S = \sum_{i=1}^N \frac{1}{\sigma_i^2} \left[ \sum_{j=1}^N k_{ij} \left(h_j +\sum_{k=1}^M \alpha_k r(x_j-c_k)\right) - d_i \right]^2\
-			+\; \lambda\sum_{i=1}^N \left( h_i - \sum_{j=1}^N r_{ij}h_j \right)^2 \label{eqn:minimisation_functional}
-\end{align}
-(equation~(7) of their paper). This requires some explanation. First, what do all the symbols denote?\footnote{Note that in the argument of $S$ above, we've dropped the vector/matrix notations. Indeed, the form of the variables is somewhat elastic, depending on how we choose to set up the problem. So although it might be tempting at first glance to assume the single-index variables of equation~\ref{eqn:minimisation_functional} are like vectors and the double-index variables are like matrices, we actually have some freedom in how to express them. For instance, the ``vector'' $d_i$ represents the original \emph{2D} image. So in order to understand what's going on in the equation, we should keep in mind the \emph{number} of independent elements each object has.} This is listed in table~\ref{tbl:minimisation_functional}.
-
-\begin{center}
-	\begin{table}[h!]
-		\begin{tabularx}{\textwidth}{l | X | X}
-			\hline
-			Variable	& Description & Role\\ \hline
-			%
-			$S$ 	& A functional & For minimisation\\ \hline
-			%
-			$\sigma_i$ & Standard deviation of the image at pixel $i$. Has $N$ elements. & Calculated from the data.\\ \hline
-			%
-			$k_{ij}$	& Deconvolution kernel. Has a user-specified number of elements. & Calculated here from PSFEx\ldots\\ \hline
-			%
-			$h_j$		& The pixels of the ``true'' image or scene which describe everything except the point sources. $N$ elements. & This is an object to be found via the minimisation procedure. Requires an intial guess, $h^0$.\\ \hline
-			%
-			$\alpha_k$	& Enodes the intenitisties of the image's point sources. Number of elements, $M$ obviously depends on the image. & This is an object to be found via the minimisation procedure. Requires an intial guess, $a^0$.\\ \hline
-			%
-			$c_k$	& Enodes the positions of the image's point sources. Since each source has two coordinates, $c$ has $2M$ elements. & This is an object to be found via the minimisation procedure. Requires an intial guess, $c^0$.\\ \hline
-			%
-			$r(x_j)$	& The target PSF. Size is set by user. & From PSFEx\ldots\\ \hline 
-			%
-			$d_i$	& Original image, or data. & What we start with.\\ \hline
-			%
-			$\lambda$	& A lagrange multiplier. & Set by the user to ensure the deconvolved image has the right statistical properties.\\
-			%
-			\hline
-		\end{tabularx}
-		\caption{Listing the variables in equation~\ref{eqn:minimisation_functional}, from left to right.}
-		\label{tbl:minimisation_functional}
-	\end{table}
-\end{center}
-
-Now we know what all the symbols mean, we can begin to see some structures.
-\begin{equation}
-	\left(h_j +\sum_{k=1}^M \alpha_k r(x_j-c_k)\right)
-\end{equation}
-is simply our reconstructed image, with background and point sources, while
-\begin{equation}
-	s_{ij}\left(h_j +\sum_{k=1}^M \alpha_k r(x_j-c_k)\right)
-\end{equation}
-``re-blurs'' the reconstruction for comparison with the data, $d_i$. The first term of equation~\ref{eqn:minimisation_functional} is therefore a $\chi^2$ term for our model and our data, albeit with the model decomposed into two pieces.
-
-The second term is included to ensure smoothness of the background\ldots \MORE
-
-We can re-express the minimisational functional in terms of a linear algebra operation. The most immediate way is
-\begin{align}
-	S\left[\vec{\alpha^\prime}, \vec{h}\right] = \left\{ \frac{1}{\vec\sigma} \left[ \mathbf k \left( \vec{h} + \vec{\alpha^\prime} \ast r \right) - \vec{d} \right]\right\}^2\
-			+\; \lambda \left( \vec{h} - \mathbf{r}\vec{h} \right)^2, \label{eqn:minimisation_functional_linalg}
-\end{align}
-where, to be totally explicit, we've listed all the variables again in table~\ref{tbl:minimisation_functional_linalg}.
-
-\begin{center}
-	\begin{table}[h!]
-		\begin{tabularx}{\textwidth}{l | X | X}
-			\hline
-			Variable	& Description & Comments\\ \hline
-			%
-			$S$ 	& A functional & For minimisation\\ \hline
-			%
-			$\vec\sigma$ & Standard deviation of image at each pixel. A vector of length $N$. & Calculated from the data.\\ \hline
-			%
-			$\mathbf k$	& Deconvolution kernel. Has a user-specified number of independent elements, but is here represented by an $N\!\times\!N$ matrix. & Calculated from PSFEx\ldots\\ \hline
-			%
-			$\vec h$		& The pixels of the ``true'' image or scene which describe everything except the point sources. Vector of length $N$. & This is an object to be found via the minimisation procedure. Requires an intial guess, $\vec h^0$.\\ \hline
-			%
-			$\vec{\alpha^\prime}$	& Enodes the intenitisties of the image's point sources. Number of elements, $M$ obviously depends on the image. & This is an object to be found via the minimisation procedure. Requires an intial guess, $\vec{\alpha^\prime}^0$.\\ \hline
-			%
-			$r$	& The target PSF. Size is set by user. & From PSFEx\ldots\\ \hline 
-			%
-			$\vec d$	& Original image, or data. $N$-element vector. & What we start with.\\ \hline
-			%
-			$\lambda$	& A Lagrange multiplier. & Set by the user to ensure the deconvolved image has the right statistical properties.\\
-			%
-			\hline
-		\end{tabularx}
-		\caption{Listing the variables in equation~\ref{eqn:minimisation_functional_linalg}, from left to right.}
-		\label{tbl:minimisation_functional_linalg}
-	\end{table}
-\end{center}
-
-We can still readily see the structure of what's going on (see comments following equation~\ref{eqn:minimisation_functional}). One issue that immediately presents itself is how very expensive the minimisation procedure is. Each step will require the evaluation of $S$ at least \emph{five} \TODO{Cato: is this true?} times (for calculating $S$ and its numerical derivatives); while each step requires three matrix-vector multiplications, which require $N$ operations ($N$, remember, is the number of pixels, which could easily be more than a million). So at the end of the day, we are left with a minimisation procedure which needs around 15$N$~ops per iteration. Using the conjugate gradient method, we may be looking at up to $N$ iterations, giving us a grand total of $\mathcal{O}(10)N^2$ operations per image. \TODO{any improvement on this would be good}.
-
-Another obvious question which must be answered is whence the initial guess for the point and extended sources, $\vec{\alpha^\prime}$ and $\vec{h}$, come. Note that it is not enough to simply use the original image, since our algorithm needs the point sources to be distinguished from everything else. We have already generated a catalogue of all the sources (along with their coordinates) in our image using SExtractor.  We've also used PSFEx to determine which of the sources were point sources -- if we can extract this information from the software \TODO{Cato: look into this, otherwise whole algorithm will be much slower}, it should be possible to make a very good estimate for the initial image.
-
-------
-
-Now we outline the steps required to minimise the functional $S$ from equation~\ref{eqn:minimisation_functional_linalg}.
-
-\begin{enumerate}
-	\item Generate an initial guess for $\vec{\alpha^\prime}$ and $\vec{h}$ using output from SExtractor and PSFEx.
-	\item Calculate $S$ from equation~\ref{eqn:minimisation_functional_linalg} with these values (pseudocode below).\label{pnt:calcS}
-	\item Calculate also the derivatives of $S$ with respect to the parameters of interest, using the conjugate gradient method (pseudocode below).\label{pnt:calcSder}
-	\item Apply steps~\ref{pnt:calcS} and~\ref{pnt:calcSder} iteratively until the minimum of $S$ is found.
-	\item Compute the residual, that is the ``reconvolved'' image ($\mathbf k\left(\vec{h}+\vec{\alpha^\prime}\ast r\right)$) minus the original image. Check whether this is roughly equal to $N$.
-	\begin{itemize}
-		\item If so, we are done.
-		\item If not, we must allow $\lambda$ to vary over the image, i.e. $\lambda\ra\lambda(\vec x)$. Recompute residuals until their sum $\simeq N$.
-	\end{itemize}
-\end{enumerate}
-
-Here is some pseudocode for calculating $S$.
-
-\texttt{
-\begin{enumerate}
-	\item
-\end{enumerate}
-}
-
-Here is pseudocode for calculating the derivatives of $S$.
-
-
-\TODO{Cato:} read about conjugate gradient method: \citet{She94}
-
-
 %%=================================================
-%% Test Noise Properties
+%% Smoothing
 %%=================================================
-\subsection{Noise Properties}
+\subsection{Regularisation}
+\label{sec:regularisation}
 
-Here I've applied a few different stretches to the original image and to the deconvolved image. The left-hand side images are all stretched originals and the right-hand side are all stretched deconvolutions. The stertch gets more sever as you go down.
 
+Occam's razor
 
-Specific notes:\\
-* I used a 9x9 kernel for these images.\\
-* To change the strength of the stretch, I simply divided the upper bound (you called it "vmax") by 2 and 10.\\
-
-\includepdf[pages={1,2}]{../../Data/Deconvolved/CFHTLS_03_g_Deconvolved_noisecompare.pdf}
 
 
 %%=================================================
@@ -560,12 +517,26 @@ Specific notes:\\
 \end{itemize}
 
 
+%%=================================================
+%% Test Noise Properties
+%%=================================================
+\subsubsection{Stretch: Noise Properties}
+
+Here I've applied a few different stretches to the original image and to the deconvolved image. The left-hand side images are all stretched originals and the right-hand side are all stretched deconvolutions. The stertch gets more severe as you go down.
 
 
+Specific notes:\\
+* I used a 9x9 kernel for these images.\\
+* To change the strength of the stretch, I simply divided the upper bound (you called it "vmax") by 2 and 10.\\
+
+\includepdf[pages={1,2}]{../../Data/Deconvolved/CFHTLS_03_g_Deconvolved_noisecompare.pdf}
+
+
+\newpage
 %%=================================================
 %% RBG
 %%=================================================
-\section{Colour Combination}
+\section{Bandpass Composition}
 \label{sec:colour}
 
 Telescope data is often given in ``bands'' -- we do not record the total flux coming from a point in the sky, but the flux in a certain wavelength range. This information allows us to investigate the properties of astronomical objects, such as temperature and chemical composition. However to make a readily-interprable image which contains maximum information in one hit, we need to combine the bands to make a colour-composite image.
@@ -683,7 +654,10 @@ A summary of this part of the project (with pseudocode) follows.
 
 \underline{Deconvolution}
 \begin{itemize}
+	\item Put in covariance matrix stuff
+	\item use \texttt{scipy.sparse} instead of building my own matrix.
 	\item How does kernel size affect execution time?
+	\item Regularisation method
 	\item Invent quality metrics: each one represents the quantitiave answer to a particular question about some aspect of the reconstructed image -- its "noise" level, the correlated nature of that noise, the number of false SExtractor detections (in the reconstructed image) generated, the SExtractor flux of certain
 objects of interest, the number of inspectors who identify feature X, etc etc etc. We can propose and discuss these aspects after seeing some images.
 	\item arcsec\ra pixels method; will need header information.
@@ -698,22 +672,9 @@ objects of interest, the number of inspectors who identify feature X, etc etc et
 
 \underline{Maths}
 \begin{itemize}
-	\item PHIL: `I would like to see a derivation of this procedure, which involves a
-matrix acting on a noisy vector. Do you start by writing down the
-principled probabilistic inference of a model image given noisy data,
-and end up showing that this boils down (under certain assumptions) to
-the matrix operations you perform? Any improvements we make to your
-code will probably be of the form "assign a different prior to the
-pixel values of the kernel/final image", so it'd be good to see how
-that propagates through into new matrix operations.'
+	\item PHIL: `I would like to see a derivation of this procedure, which involves a matrix acting on a noisy vector. Do you start by writing down the principled probabilistic inference of a model image given noisy data, and end up showing that this boils down (under certain assumptions) to the matrix operations you perform? Any improvements we make to your code will probably be of the form "assign a different prior to the pixel values of the kernel/final image", so it'd be good to see how that propagates through into new matrix operations.'
 
-	\item A prior on pixel values would lead to an
-additional term (with a lagrange multiplier) added to the summed
-squared residuals. It would be good to also include the weight image, that
-characterises the actual per pixel uncertainty, because some pixels
-are going to have very high uncertainty indeed... We need to be able
-to cope with saturated pixels, chip gaps etc, and weight images is how
-you do it, in general.
+	\item Prior on pixel values \ra Lagrange term added to the summed squared residuals.
 \end{itemize}
 
 
@@ -810,6 +771,137 @@ high-resolution final image.
 \paragraph{Further Work}
 
 -- Devise a more robust optimisation that finds minimum even in populated images.
+
+
+
+%%=================================================
+%% MCS 1998 Procedure
+%%=================================================
+\section{Light Deconvolution Procedure According to \citet{MCS98}}
+\label{sec:MCS98procedure}
+
+In section~\ref{sec:imdec}, we described our procedure for deconvolving an image to a pre-set target PSF. Here we outline a more robust and powerful method due to \citet{MCS98}. Instead of finding the deconvolved image, $\mathcal A$, by minimising the residuals for equation~\ref{eqn:simple_deconvolve}, we split the final image into its point sources -- amplitude-$\alpha$ $\delta$-functions at (2D) position $c$ --, and a smooth background, $h$; then we minimise the functional $S\left[\{\alpha\},\{c\}, h \,\middle|\, {d}, {\sigma}, {r}, {k}, \lambda \right]$ with respect to its left-hand arguments:
+\begin{align}
+	S = \sum_{i=1}^N \frac{1}{\sigma_i^2} \left[ \sum_{j=1}^N k_{ij} \left(h_j +\sum_{k=1}^M \alpha_k r(x_j-c_k)\right) - d_i \right]^2\
+			+\; \lambda\sum_{i=1}^N \left( h_i - \sum_{j=1}^N r_{ij}h_j \right)^2 \label{eqn:minimisation_functional}
+\end{align}
+(equation~(7) of their paper). This requires some explanation. First, what do all the symbols denote?\footnote{Note that in the argument of $S$ above, we've dropped the vector/matrix notations. Indeed, the form of the variables is somewhat elastic, depending on how we choose to set up the problem. So although it might be tempting at first glance to assume the single-index variables of equation~\ref{eqn:minimisation_functional} are like vectors and the double-index variables are like matrices, we actually have some freedom in how to express them. For instance, the ``vector'' $d_i$ represents the original \emph{2D} image. So in order to understand what's going on in the equation, we should keep in mind the \emph{number} of independent elements each object has.} This is listed in table~\ref{tbl:minimisation_functional}.
+
+\begin{center}
+	\begin{table}[h!]
+		\begin{tabularx}{\textwidth}{l | X | X}
+			\hline
+			Variable	& Description & Role\\ \hline
+			%
+			$S$ 	& A functional & For minimisation\\ \hline
+			%
+			$\sigma_i$ & Standard deviation of the image at pixel $i$. Has $N$ elements. & Calculated from the data.\\ \hline
+			%
+			$k_{ij}$	& Deconvolution kernel. Has a user-specified number of elements. & Calculated here from PSFEx\ldots\\ \hline
+			%
+			$h_j$		& The pixels of the ``true'' image or scene which describe everything except the point sources. $N$ elements. & This is an object to be found via the minimisation procedure. Requires an intial guess, $h^0$.\\ \hline
+			%
+			$\alpha_k$	& Enodes the intenitisties of the image's point sources. Number of elements, $M$ obviously depends on the image. & This is an object to be found via the minimisation procedure. Requires an intial guess, $a^0$.\\ \hline
+			%
+			$c_k$	& Enodes the positions of the image's point sources. Since each source has two coordinates, $c$ has $2M$ elements. & This is an object to be found via the minimisation procedure. Requires an intial guess, $c^0$.\\ \hline
+			%
+			$r(x_j)$	& The target PSF. Size is set by user. & From PSFEx\ldots\\ \hline 
+			%
+			$d_i$	& Original image, or data. & What we start with.\\ \hline
+			%
+			$\lambda$	& A lagrange multiplier. & Set by the user to ensure the deconvolved image has the right statistical properties.\\
+			%
+			\hline
+		\end{tabularx}
+		\caption{Listing the variables in equation~\ref{eqn:minimisation_functional}, from left to right.}
+		\label{tbl:minimisation_functional}
+	\end{table}
+\end{center}
+
+Now we know what all the symbols mean, we can begin to see some structures.
+\begin{equation}
+	\left(h_j +\sum_{k=1}^M \alpha_k r(x_j-c_k)\right)
+\end{equation}
+is simply our reconstructed image, with background and point sources, while
+\begin{equation}
+	s_{ij}\left(h_j +\sum_{k=1}^M \alpha_k r(x_j-c_k)\right)
+\end{equation}
+``re-blurs'' the reconstruction for comparison with the data, $d_i$. The first term of equation~\ref{eqn:minimisation_functional} is therefore a $\chi^2$ term for our model and our data, albeit with the model decomposed into two pieces.
+
+The second term is included to ensure smoothness of the background\ldots \MORE
+
+We can re-express the minimisational functional in terms of a linear algebra operation. The most immediate way is
+\begin{align}
+	S\left[\vec{\alpha^\prime}, \vec{h}\right] = \left\{ \frac{1}{\vec\sigma} \left[ \mathbf k \left( \vec{h} + \vec{\alpha^\prime} \ast r \right) - \vec{d} \right]\right\}^2\
+			+\; \lambda \left( \vec{h} - \mathbf{r}\vec{h} \right)^2, \label{eqn:minimisation_functional_linalg}
+\end{align}
+where, to be totally explicit, we've listed all the variables again in table~\ref{tbl:minimisation_functional_linalg}.
+
+\begin{center}
+	\begin{table}[h!]
+		\begin{tabularx}{\textwidth}{l | X | X}
+			\hline
+			Variable	& Description & Comments\\ \hline
+			%
+			$S$ 	& A functional & For minimisation\\ \hline
+			%
+			$\vec\sigma$ & Standard deviation of image at each pixel. A vector of length $N$. & Calculated from the data.\\ \hline
+			%
+			$\mathbf k$	& Deconvolution kernel. Has a user-specified number of independent elements, but is here represented by an $N\!\times\!N$ matrix. & Calculated from PSFEx\ldots\\ \hline
+			%
+			$\vec h$		& The pixels of the ``true'' image or scene which describe everything except the point sources. Vector of length $N$. & This is an object to be found via the minimisation procedure. Requires an intial guess, $\vec h^0$.\\ \hline
+			%
+			$\vec{\alpha^\prime}$	& Enodes the intenitisties of the image's point sources. Number of elements, $M$ obviously depends on the image. & This is an object to be found via the minimisation procedure. Requires an intial guess, $\vec{\alpha^\prime}^0$.\\ \hline
+			%
+			$r$	& The target PSF. Size is set by user. & From PSFEx\ldots\\ \hline 
+			%
+			$\vec d$	& Original image, or data. $N$-element vector. & What we start with.\\ \hline
+			%
+			$\lambda$	& A Lagrange multiplier. & Set by the user to ensure the deconvolved image has the right statistical properties.\\
+			%
+			\hline
+		\end{tabularx}
+		\caption{Listing the variables in equation~\ref{eqn:minimisation_functional_linalg}, from left to right.}
+		\label{tbl:minimisation_functional_linalg}
+	\end{table}
+\end{center}
+
+We can still readily see the structure of what's going on (see comments following equation~\ref{eqn:minimisation_functional}). One issue that immediately presents itself is how very expensive the minimisation procedure is. Each step will require the evaluation of $S$ at least \emph{five} \TODO{Cato: is this true?} times (for calculating $S$ and its numerical derivatives); while each step requires three matrix-vector multiplications, which require $N^2$ operations ($N$, remember, is the number of pixels, which could easily be more than a million). So at the end of the day, we are left with a minimisation procedure which needs around 15$N^2$~ops per iteration. Using the conjugate gradient method, we may be looking at up to $N$ iterations, giving us a grand total of $\mathcal{O}(10)\cdot N^3$ operations per image. \TODO{any improvement on this would be good}.
+
+Another obvious question which must be answered is whence the initial guess for the point and extended sources, $\vec{\alpha^\prime}$ and $\vec{h}$, come. Note that it is not enough to simply use the original image, since our algorithm needs the point sources to be distinguished from everything else. We have already generated a catalogue of all the sources (along with their coordinates) in our image using SExtractor.  We've also used PSFEx to determine which of the sources were point sources -- if we can extract this information from the software \TODO{Cato: look into this, otherwise whole algorithm will be much slower}, it should be possible to make a very good estimate for the initial image.
+
+------
+
+Now we outline the steps required to minimise the functional $S$ from equation~\ref{eqn:minimisation_functional_linalg}.
+
+\begin{enumerate}
+	\item Generate an initial guess for $\vec{\alpha^\prime}$ and $\vec{h}$ using output from SExtractor and PSFEx.
+	\item Calculate $S$ from equation~\ref{eqn:minimisation_functional_linalg} with these values (pseudocode below).\label{pnt:calcS}
+	\item Calculate also the derivatives of $S$ with respect to the parameters of interest, using the conjugate gradient method (pseudocode below).\label{pnt:calcSder}
+	\item Apply steps~\ref{pnt:calcS} and~\ref{pnt:calcSder} iteratively until the minimum of $S$ is found.
+	\item Compute the residual, that is the ``reconvolved'' image ($\mathbf k\left(\vec{h}+\vec{\alpha^\prime}\ast r\right)$) minus the original image. Check whether this is roughly equal to $N$.
+	\begin{itemize}
+		\item If so, we are done.
+		\item If not, we must allow $\lambda$ to vary over the image, i.e. $\lambda\ra\lambda(\vec x)$. Recompute residuals until their sum $\simeq N$.
+	\end{itemize}
+\end{enumerate}
+
+------
+
+Here is some pseudocode for calculating $S$.
+\texttt{\begin{enumerate}
+	\item Do it
+\end{enumerate}}
+
+------
+
+Here is pseudocode for calculating the derivatives of $S$.
+\texttt{\begin{enumerate}
+	\item Do it
+\end{enumerate}}
+
+\TODO{Cato:} read about conjugate gradient method: \citet{She94}
+
 
 
 %%=================================================
