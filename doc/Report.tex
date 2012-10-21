@@ -305,36 +305,38 @@ In a (possibly misguided) bid to keep things simple, I prescribed ``PSF-tidying'
 %%=================================================
 %% Kernel
 %%=================================================
-\subsection{Mapping to the Target PSF, \psfref}
+\subsection{Mapping from the Target PSF to the Observed PSF}
 \label{sec:kernel}
 
 In this section, we outline how to find the ``convolution kernel'' which maps between the two versions of the PSF, discussed above. This object allows us to regularise the entire image.
 
-Say we have two similar images: $\mathcal{A}$, which is a picture taken by a real telescope, and $\mathcal{B}$ which represents the same astronomical image, with a smaller, user-selected PSF $\psfref(\vec x)$. In order to extract image $\mathcal B$ from image $\mathcal A$, we must convolve it by some kernel $k$:
+Say we have two similar images: $\mathcal{A}$, which is a picture taken by a real telescope, and $\mathcal{B}$ which represents the same astronomical image, with a smaller, user-specified PSF $\psfref(\vec x)$. In order to change image $\mathcal B$ into image $\mathcal A$, we can convolve it by some kernel $k$:
 \begin{equation}
-	\mathcal B = \mathcal A \ast k.
+	\mathcal A = \mathcal B \ast k.
 \end{equation}
-Note that $k$ is merely an image, or a template for how each pixel in $\mathcal B$ is a sum of pixels in  $\mathcal A$.
+Note that $k$ is merely an image, or a template for how each pixel in $\mathcal A$ is a sum of pixels in $\mathcal B$.
 
 Since convolution is a linear operation, we can cast our search for the convolution kernel in terms of a linear algebra problem. Specifically, we want to solve (for $\vec k$)\footnote{Here, and throughout the document, we abuse the vector/matrix notation. Vectors are traditionally defined by their transformation properties; here we just take them to be carfully-constructed lists of real numbers.} an equation of the form
 \begin{equation}\label{eqn:vector}
-	\vec b = \mathbf{A} \vec k,
+	\vec a = \mathbf{B} \vec k,
 \end{equation}
-where the matrix $\mathbf{A}$ and the vector $\vec b$ encode the original and deconvolved image, and $\vec k$ represents the convolution kernel (also an image). When written in this form, our problem of finding $\vec k$ becomes a traditional vector-equation--solve.
+where the vector $\vec a$ and the matrix $\mathbf{B}$ encode the original and deconvolved image, and $\vec k$ represents the convolution kernel (also an image). When written in this form, our problem of finding $\vec k$ becomes a traditional vector-equation--solve.
 
-The vectors $\vec b$ and $\vec k$ are easy to construct -- rows of the 2D image are concatenated into a long 1D array (this is called ``flattening''). If $\mathcal B$ is an image of $N$ pixels, then $\vec b$ will have $N$ elements. The kernel $\vec k$ has many fewer elements, but the procedure is exactly the same.
+The vectors $\vec a$ and $\vec k$ are easy to construct -- rows of the 2D image are concatenated into a long 1D array (this is called ``flattening''). If $\mathcal A$ is an image of $N$ pixels, then $\vec a$ will have $N$ elements. The kernel $\vec k$ has many fewer elements, but the procedure is exactly the same.
 
-The original image matrix, $\mathbf A$ is less strightforward. We must think carefully about the convolution process to understand what's going on here. Consider a uniform $3\!\times\!3$ kernel being convolved with a $9\!\times\!9$ image, as shown in figure~\ref{fig:linalg_convolution}.
+The target-PSF image matrix, $\mathbf B$ is less strightforward. We must think carefully about the convolution process to understand what's going on here. Consider a uniform $3\!\times\!3$ kernel being convolved with a $9\!\times\!9$ image, as shown in figure~\ref{fig:linalg_convolution}.
 
 \FIG{Convolution \ra linear algebra}\label{fig:linalg_convolution}
 
 \MORE
 
-$\mathbf A$ is then a matrix with ${\rm size}(b)$ rows and ${\rm size}(k)$ columns. The vector problem in equation~\ref{eqn:vector} is overdetermined, so we must use some optimisation procedure (typically least-squares minimisation) to find $\vec k$.
+$\mathbf B$ is then a matrix with ${\rm size}(a)$ rows and ${\rm size}(k)$ columns. The vector problem in equation~\ref{eqn:vector} is overdetermined, so we must use some optimisation procedure (typically least-squares minimisation) to find $\vec k$.
 
 
 \subsubsection{Interlude: Honesty Note}
 \label{sec:shave}
+
+\TODO{Cato: this might be confusing -- reverse A and B?}
 
 When we convolve two images, we produce a new image pixel by taking a weighted sum of the surrounding pixels. For instance, say we convolve a large image $\mathcal{A}$ with a 3$\times$3-pixel image to get $\mathcal{B}$. The first (i.e. top-left) pixel of $\mathcal{B}$ that we can properly determine is not the same as the first pixel of $\mathcal{A}$, because \MORE.
 
@@ -358,19 +360,23 @@ DWH has argued semi-convincingly that we needn't make such a sacrifice in practi
 \subsection{Full Image Deconvolution}
 \label{sec:imdec}
 
-In section~\ref{sec:kernel} we found the kernel $k$ which would transform a messy PSF image into a nice symmetrical one with known properties (\psfobs $\rightarrow$ \psfref.). This same kernel can be used to transform an entire image with the observed PSF, $\mathcal A$, into the same image with the target PSF, $\mathcal B$. To do this, we can perform the operation
+In section~\ref{sec:kernel} we found the kernel $k$ which would transform a PSF with known properties (\psfref) into the observed PSF (\psfobs). This same kernel can be used to transform an entire image with the observed PSF, $\mathcal A$, into the ``same'' image with the target PSF, $\mathcal B$. To do this, we can perform the operation
 \begin{align}
-	\mathcal{B} &= k \ast \mathcal{A},
+	\mathcal{A} &= k \ast \mathcal{B},
 	\shortintertext{or, in the language of linear algebra,}
-	\vec{b} &= \mathbf{K} \vec{a}.\label{eqn:simple_deconvolve}
+	\vec{a} &= \mathbf{K} \vec{b}.\label{eqn:simple_deconvolve}
 \end{align}
-The image vectors $\vec b$ and $\vec a$ have the same form as discussed earlier -- they are simply flattened versions of the pixel-arrays. The kernel matrix $\mathbf K$ is more tricky; but after some refelxion, it transpires that $\mathbf K$ is a sparse, upper-diagonal matrix where every row is identical, but shifted right by one element with respect to the row above. (Note that in practice it is unweildy and prohibitively expensive to store all the zero-entries of the $\mathbf K$ matrix -- we have to be a little bit clever about how to store and manipulate the relevant information.)
+The image vectors $\vec a$ and $\vec b$ have the same form as discussed earlier -- they are simply flattened versions of the pixel-arrays. The kernel matrix $\mathbf K$ is more tricky; but after some refelxion, it transpires that $\mathbf K$ is a sparse, upper-diagonal matrix where every row is identical, but shifted right by one element with respect to the row above. (Note that in practice it is unweildy and prohibitively expensive to store all the zero-entries of the $\mathbf K$ matrix -- we have to be a little bit clever about how to store and manipulate the relevant information.)
 
-Once we have constructed an appropriate kernel matrix and multiplied it by the (observed) image vector, we are done.
+Once we have constructed an appropriate kernel matrix, we solve the linear system to find the target image $\mathcal B$.
 
-Alternatively, we can simply use a pre-existing module which performs the convolution for us: \texttt{scipy.signal.fftconvolve} does the job nicely. We can even tell this module to reduce the size of the convolved image (\texttt{mode="valid"}), in keeping with the concerns raised in section~\ref{sec:shave} .
+\TODO{Cato: use \texttt{scipy.sparse}\ldots}
 
-\TODO{Cato: is this actually the choice? Where could \texttt{scipy.sparse} come in?}
+\TODO{Cato: pseudocode?}
+
+\TODO{Cato: I think this stuff is no longer relevant}
+
+Alternatively, we can simply use a pre-existing module which performs the convolution for us: \texttt{scipy.signal.fftconvolve} does the job nicely. We can even tell this module to reduce the size of the convolved image (\texttt{mode="valid"}), in keeping with the concerns raised in section~\ref{sec:shave}.
 
 However, it would be na\"ive to simply place our trust in SciPy -- their convolution method may be subtly different from the one we wish to use for scientific inference. Thus, we cannot escape having to implement the concolution procedure of equation~\ref{eqn:simple_deconvolve}. Figure~\vref{fig:deconvolution_comparison} shows a comparison, with residuals. Leaving aside the image arteficts from using a small convolution kernel (\MORE FIX!), we can see that the two methods do not agree completely. This is worrying, but according to DWH the problem is almost certainly with my implementation rather than SciPy's, and I am inclined to agree (it might be a simple indexing error). Combined with the fact that SciPy is around 15 times faster, it makes little sense to labour on with my code; so we adopt the SciPy convolution module.
 
