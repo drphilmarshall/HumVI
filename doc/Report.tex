@@ -380,9 +380,7 @@ The image vectors $\vec a$ and $\vec b$ have the same form as discussed earlier 
 
 Once we have constructed an appropriate kernel matrix, we solve the linear system to find the pixel vector $\vec b$ for the target image $\mathcal B$.
 
-\TODO{Cato: use \texttt{scipy.sparse}\ldots}
-
-\TODO{Cato: pseudocode?}
+---
 
 \TODO{Cato: I think this stuff is no longer relevant}
 
@@ -431,14 +429,14 @@ Unfortunately that isn't the end of the story, as equation~\ref{eqn:simple_decon
 \subsubsection{Pseudocode}
 
 \texttt{\begin{enumerate}
-	\item img\_array = readin(imagefile)	\#\# Or can be given as straight array
+	\item img\_array = readin(imagefile)\newline~\mbox{}~\hspace{1cm}\#\# Or can be given as straight array
 	\item img\_vec = img\_array.flatten()
-	\item krn\_array = readin(kernelfile)	\#\# Or can be given as straight array
+	\item krn\_array = readin(kernelfile)	\newline~\mbox{}~\hspace{1cm}\#\# Or can be given as straight array
 	%\item \MORE?
-	\item krn\_mat = sparse\_diag\_matrix(krn\_array.flatten(), offsets=[0,1,2,\ldots])	\#\# general gist
+	\item krn\_mat = sparse\_diag\_matrix(krn\_array.flatten(), offsets=[0,1,2,\ldots])\newline~\mbox{}~\hspace{1cm}\#\# general gist
 	\item refimg\_vec = sparse\_solve(krn\_mat, img\_vec)
-	\item refimg\_vec = stretch(refimg\_vec)	\#\# Ease of viewing
-	\item refimg = reshape(refimg\_vec)	\#\# Make into an image shape
+	\item refimg\_vec = stretch(refimg\_vec)\newline~\mbox{}~\hspace{1cm}\#\# Ease of viewing
+	\item refimg = reshape(refimg\_vec)\newline~\mbox{}~\hspace{1cm}\#\# Make into an image-worthy shape
 	\item save\_image(refimg)
 \end{enumerate}}
 
