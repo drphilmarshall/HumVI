@@ -302,6 +302,11 @@ In a (possibly misguided) bid to keep things simple, I prescribed ``PSF-tidying'
 \end{enumerate}
 
 
+%%-------------------------------------------------------------------------------------------
+\subsubsection{Pseudocode}
+
+\ldots
+
 %%=================================================
 %% Kernel
 %%=================================================
@@ -310,7 +315,7 @@ In a (possibly misguided) bid to keep things simple, I prescribed ``PSF-tidying'
 
 In this section, we outline how to find the ``convolution kernel'' which maps between the two versions of the PSF, discussed above. This object allows us to regularise the entire image.
 
-Say we have two similar images: $\mathcal{A}$, which is a picture taken by a real telescope, and $\mathcal{B}$ which represents the same astronomical image, with a smaller, user-specified PSF $\psfref(\vec x)$. In order to change image $\mathcal B$ into image $\mathcal A$, we can convolve it by some kernel $k$:
+Say we have two similar images: $\mathcal{A}$, which is a picture taken by a real telescope; and $\mathcal{B}$, which represents the same astronomical image, with a smaller, user-specified PSF ($\psfref(\vec x)$). In order to change image $\mathcal B$ into image $\mathcal A$, we can convolve it by some kernel $k$:
 \begin{equation}
 	\mathcal A = \mathcal B \ast k.
 \end{equation}
@@ -332,7 +337,12 @@ The target-PSF image matrix, $\mathbf B$ is less strightforward. We must think c
 
 $\mathbf B$ is then a matrix with ${\rm size}(a)$ rows and ${\rm size}(k)$ columns. The vector problem in equation~\ref{eqn:vector} is overdetermined, so we must use some optimisation procedure (typically least-squares minimisation) to find $\vec k$.
 
+%%-------------------------------------------------------------------------------------------
+\subsubsection{Pseudocode}
 
+\ldots
+
+%%-------------------------------------------------------------------------------------------
 \subsubsection{Interlude: Honesty Note}
 \label{sec:shave}
 
@@ -368,7 +378,7 @@ In section~\ref{sec:kernel} we found the kernel $k$ which would transform a PSF 
 \end{align}
 The image vectors $\vec a$ and $\vec b$ have the same form as discussed earlier -- they are simply flattened versions of the pixel-arrays. The kernel matrix $\mathbf K$ is more tricky; but after some refelxion, it transpires that $\mathbf K$ is a sparse, upper-diagonal matrix where every row is identical, but shifted right by one element with respect to the row above. (Note that in practice it is unweildy and prohibitively expensive to store all the zero-entries of the $\mathbf K$ matrix -- we have to be a little bit clever about how to store and manipulate the relevant information.)
 
-Once we have constructed an appropriate kernel matrix, we solve the linear system to find the target image $\mathcal B$.
+Once we have constructed an appropriate kernel matrix, we solve the linear system to find the pixel vector $\vec b$ for the target image $\mathcal B$.
 
 \TODO{Cato: use \texttt{scipy.sparse}\ldots}
 
@@ -407,7 +417,6 @@ However, it would be na\"ive to simply place our trust in SciPy -- their convolu
 \end{figure}
 
 
-
 Unfortunately that isn't the end of the story, as equation~\ref{eqn:simple_deconvolve} has some important shortcomings:
 
 \begin{enumerate}
@@ -415,6 +424,23 @@ Unfortunately that isn't the end of the story, as equation~\ref{eqn:simple_decon
 	
 	\item The procedure outlined in this section may be highly over-determined, and so there is a lot of flexibility in the solution. Typically, this will introduce artifacts into the image, which, given the goals outlined in the introduction, would be highly unwelcome.\newline The reference image we have obtained at this point must be ``regularised'', or smoothed according to some well-motivated principles. One can find a good discussion of these principles in \citet{MCS98}: this paper is outlined in appendix~\ref{sec:MCS98notes}. Some comments on their mathematical procedure can be found in appendix~\ref{sec:MCS98procedure}. \newline Though it would be entirely possible to implement this for the current project (indeed, we have already generated much of the necessary data), it may well be overkill. Instead, a more modest regularisation scheme is proposed in section~\ref{sec:regularisation}.
 \end{enumerate}
+
+
+
+%%-------------------------------------------------------------------------------------------
+\subsubsection{Pseudocode}
+
+\texttt{\begin{enumerate}
+	\item img\_array = readin(imagefile)	\#\# Or can be given as straight array
+	\item img\_vec = img\_array.flatten()
+	\item krn\_array = readin(kernelfile)	\#\# Or can be given as straight array
+	%\item \MORE?
+	\item krn\_mat = sparse\_diag\_matrix(krn\_array.flatten(), offsets=[0,1,2,\ldots])	\#\# general gist
+	\item refimg\_vec = sparse\_solve(krn\_mat, img\_vec)
+	\item refimg\_vec = stretch(refimg\_vec)	\#\# Ease of viewing
+	\item refimg = reshape(refimg\_vec)	\#\# Make into an image shape
+	\item save\_image(refimg)
+\end{enumerate}}
 
 %%=================================================
 %% Image Noise
@@ -460,6 +486,16 @@ A good trick for achieving this result without re-writing our minimisation code 
 \end{equation}
 It is easy to show, using the symmetry of $\mathbf{C}$, that using this matrix equation in~\ref{eqn:sum_residuals} yields equation~\ref{eqn:matrix_eqn_noise}.
 
+
+
+%%-------------------------------------------------------------------------------------------
+\subsubsection{Pseudocode}
+
+\ldots
+
+
+
+
 %%=================================================
 \subsubsection{Noise Model}
 
@@ -489,6 +525,15 @@ Now consider condition (i) above: is it possible that the noise in pixel $j$ is 
 A covariance matrix which refelcts these considerations will have off-diagonal elements which appear in diagonal stripes directly either side of the main diagonal (representing sideways-neighbours of pixel $j$) and other diagonal stripes around $w$ elements from the main diagonal, where $w$ is the width of the image. A calculation of how these off-diagonal stripes are related to the diagonal value $j$ will depend to some extent on the intensity profile of the source which appears in $j$ and on the properties of the detector. 
 
 Still more advanced noise models will exist. But for our treatment, we will content ourselves with a covariance matrix of the form given in equation~\ref{eqn:covmat}.
+
+
+
+%%-------------------------------------------------------------------------------------------
+\subsubsection{Pseudocode}
+
+\ldots
+
+
 
 %%-----------------------------------------------------------------------------------------
 \subsubsection{Precomputed Covariance Matrices}
