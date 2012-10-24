@@ -4,13 +4,13 @@
 %=================================================
 
 \usepackage{fullpage, parskip}
-\usepackage{fancyhdr}	%% Header and footer
+\usepackage{fancyhdr}
 \usepackage{amsmath, mathtools}
-\usepackage{amssymb}	%% mathbb, \ll
-\usepackage[round,authoryear]{natbib}	%% Citations
+\usepackage{amssymb}
+\usepackage[round,authoryear]{natbib}
 \usepackage[breaklinks,backref,bookmarks=true]{hyperref}
 \usepackage{varioref}
-\usepackage{enumitem}	%% Resume numbering in enumerate
+\usepackage{enumitem}
 \usepackage{url}
 \usepackage{graphicx}
 \usepackage{tabularx}
@@ -18,8 +18,9 @@
 \captionsetup{compatibility=false}
 \usepackage[usenames,dvipsnames]{color}
 \usepackage{pdfpages}
-\usepackage{xspace}	%% Guesses whether to put space after command
-\usepackage{aas_macros} %% Journal control sequences
+\usepackage{xspace}
+%% Journal control sequences
+\usepackage{aas_macros} 
 
 %--------------------------------------------------
 %% Header and Footer
@@ -241,7 +242,7 @@ Mathematically, we can think of \psfobs as being composed of the reference PSF c
 	\intertext{In the following sections, we discuss how we determine the observed PSF, construct the reference PSF, and find the convolution kernel $K$. Crucially for homogenising the image, we must also find the kernel $k$ which governs the inverse transformation, i.e.}
 	\psfobs(\vec x) \ast k(\vec x) = \psfref(\vec x).
 \end{align}
-
+\TODO{Update}
 
 %%=================================================
 %% SExtractor
@@ -335,12 +336,25 @@ The target-PSF image matrix, $\mathbf B$ is less strightforward. We must think c
 
 \MORE
 
-$\mathbf B$ is then a matrix with ${\rm size}(a)$ rows and ${\rm size}(k)$ columns. The vector problem in equation~\ref{eqn:vector} is overdetermined, so we must use some optimisation procedure (typically least-squares minimisation) to find $\vec k$.
+$\mathbf B$ is then a matrix with ${\rm size}(a)$ rows and ${\rm size}(k)$ columns. The vector problem in equation~\ref{eqn:vector} is underdetermined, so we must use some optimisation procedure (typically least-squares minimisation) to find $\vec k$.
 
 %%-------------------------------------------------------------------------------------------
 \subsubsection{Pseudocode}
 
-\ldots
+\texttt{\begin{enumerate}
+	\item psf\_obs = readin(psfex\_psf.fits)
+	\item psfmoments = moments(psf\_obs)
+	\item psf\_ref = 2DGaussian(moments)
+	\item \#\# Turn these image arrays into linear algebra objects
+	\item psf\_obs = psf\_obs.flatten()
+	\item psf\_ref = stack(psf\_ref, dim=(psf\_obs.size, kernel.size))\
+ 				\newline~\mbox{}~\hspace{1cm} stack() method constructs rectangular Toepliz matrix of dimensions dim
+	\item kernel = solve(psf\_ref, psf\_obs)
+	\item kernel = reshape(kernel, kernel\_dim)
+	\item save\_image(kernel)
+	\item return kernel
+\end{enumerate}}
+
 
 %%-------------------------------------------------------------------------------------------
 \subsubsection{Interlude: Honesty Note}
@@ -378,44 +392,9 @@ In section~\ref{sec:kernel} we found the kernel $k$ which would transform a PSF 
 \end{align}
 The image vectors $\vec a$ and $\vec b$ have the same form as discussed earlier -- they are simply flattened versions of the pixel-arrays. The kernel matrix $\mathbf K$ is more tricky; but after some refelxion, it transpires that $\mathbf K$ is a sparse, upper-diagonal matrix where every row is identical, but shifted right by one element with respect to the row above. (Note that in practice it is unweildy and prohibitively expensive to store all the zero-entries of the $\mathbf K$ matrix -- we have to be a little bit clever about how to store and manipulate the relevant information.)
 
-Once we have constructed an appropriate kernel matrix, we solve the linear system to find the pixel vector $\vec b$ for the target image $\mathcal B$.
+Once we have constructed an appropriate kernel matrix, we solve (using \texttt{scipy.sparse.linalg}) the linear system to find the pixel vector $\vec b$ for the target image $\mathcal B$.
 
----
-
-\TODO{Cato: I think this stuff is no longer relevant}
-
-Alternatively, we can simply use a pre-existing module which performs the convolution for us: \texttt{scipy.signal.fftconvolve} does the job nicely. We can even tell this module to reduce the size of the convolved image (\texttt{mode="valid"}), in keeping with the concerns raised in section~\ref{sec:shave}.
-
-However, it would be na\"ive to simply place our trust in SciPy -- their convolution method may be subtly different from the one we wish to use for scientific inference. Thus, we cannot escape having to implement the concolution procedure of equation~\ref{eqn:simple_deconvolve}. Figure~\vref{fig:deconvolution_comparison} shows a comparison, with residuals. Leaving aside the image arteficts from using a small convolution kernel (\MORE FIX!), we can see that the two methods do not agree completely. This is worrying, but according to DWH the problem is almost certainly with my implementation rather than SciPy's, and I am inclined to agree (it might be a simple indexing error). Combined with the fact that SciPy is around 15 times faster, it makes little sense to labour on with my code; so we adopt the SciPy convolution module.
-
-\begin{figure}
-	\def\width{0.3\textwidth}
-	\centering
-	\begin{subfigure}{\width}
-		\includegraphics[width=\textwidth]{../../Data/Deconvolved/gsc_CFHTLS_03_g_sci_rescaled.png}
-		\caption{Original image}
-	\end{subfigure}
-	
-	\begin{subfigure}{\width}
-		\includegraphics[width=\textwidth]{../../Data/Deconvolved/gsc_CFHTLS_03_g_sci_rescaled_MAN.png}
-		\caption{Deconvolved using my procedure and a 3x3 kernel.}
-	\end{subfigure}
-	~
-	\begin{subfigure}{\width}
-		\includegraphics[width=\textwidth]{../../Data/Deconvolved/gsc_CFHTLS_03_g_sci_rescaled_SCI.png}
-		\caption{Deconvolved using SciPy's procedure and a 3x3 kernel.}
-	\end{subfigure}
-	
-	\begin{subfigure}{\width}
-		\includegraphics[width=\textwidth]{../../Data/Deconvolved/gsc_CFHTLS_03_g_sci_rescaled_RES.png}
-		\caption{Residuals.}
-	\end{subfigure}
-	\caption{Deconvolution procedure -- a comparison of my home-made convolution algorithm and SciPy's optimised one. SciPy takes about 1/15 of the time. Note that a 3x3 kernel was used for this test, and there are obvious artifacts introduced around bright points of the image.}
-	\label{fig:deconvolution_comparison}
-\end{figure}
-
-
-Unfortunately that isn't the end of the story, as equation~\ref{eqn:simple_deconvolve} has some important shortcomings:
+But unfortunately that isn't the end of the story, as equation~\ref{eqn:simple_deconvolve} has some important shortcomings:
 
 \begin{enumerate}
 	\item In using our recorded image to recover a ``better'' one (which bears more resmblance to the scene), we have ignored the existence of \emph{noise} in the data. This problem will be addressed in section~\vref{sec:pixvar}.
@@ -434,7 +413,7 @@ Unfortunately that isn't the end of the story, as equation~\ref{eqn:simple_decon
 	\item krn\_array = readin(kernelfile)	\newline~\mbox{}~\hspace{1cm}\#\# Or can be given as straight array
 	%\item \MORE?
 	\item krn\_mat = sparse\_diag\_matrix(krn\_array.flatten(), offsets=[0,1,2,\ldots])\newline~\mbox{}~\hspace{1cm}\#\# general gist
-	\item refimg\_vec = sparse\_solve(krn\_mat, img\_vec)
+	\item refimg\_vec = sparse\_lsq\_solve(krn\_mat, img\_vec)\newline~\mbox{}~\hspace{1cm}\#\# System is underdetermined \ra iterative solution
 	\item refimg\_vec = stretch(refimg\_vec)\newline~\mbox{}~\hspace{1cm}\#\# Ease of viewing
 	\item refimg = reshape(refimg\_vec)\newline~\mbox{}~\hspace{1cm}\#\# Make into an image-worthy shape
 	\item save\_image(refimg)
@@ -592,34 +571,7 @@ Telescope data is often given in ``bands'' -- we do not record the total flux co
 
 Many methods had been developed to do this in accordance with researchers' individual aesthetic preference. But the full richness of possibility was still unexploited, until \citet{Lup++04} demonstrated just how much detail one could extract from data when colour was given its deserved treatment (see appendix~\ref{sec:Lup++04notes} for more detail). Using their method, we can combine images from different bands in a way which enhances hidden or faint features without allowing bright objects to dominate. It has the further advantage that the brightness of an object in the image is decoupled from its colour. The method is implemented in PJM's \emph{HumVI} (formerly \emph{ColorJPG}).
 
-A further improvement to the method was implemented by Wherry (\MORE describe difference
-\footnote{PHIL: `My reading of it is that Lupton uses two parameters, Q and alpha, to
-tweak the look of the image, while Wherry's IDL code takes 4 input
-parameters: 3 image scales and a nonlinearity parameter.
-I like Wherry's approach because I *think* I want to make images that
-all have the same scales and limits, that is, that a pixel of a
-particular colour and brightness in field1.png is representing the
-same set of surface brightnesses that a pixel of equal colour and
-brightness is in field2.png. I want to develop intuition about the
-objects, and the noise level, through displaying a lot of images! Note
-that display of noise is itself an issue - I am unlikely to want to
-use your "kill noise" option, but am happy for the zero surface
-brightness level in the image to be dark grey instead of black.
-
-Anupreeta More has made a very nice set of test CFHTLS images for the
-Lens Zoo, and I discussed with her a bit your work: she thinks we
-should do a blind taste test at some point, showing the lens zoo dev
-team her images that have been a) displayed in standard form with
-HumVI and b) deconvolved and then
-displayed in standard form with HumVI, and ask for them to be graded
-for arc visibility. Probably we would want to supply a few different
-standard forms as well (and by "form" I mean {scales,nlin}). We can
-also do image testing at Adler Planetarium on the willing public
-there. The question we want to answer is: "how should we display an
-image to maximize the likelihood of an untrained human seeing
-interesting feature X?"  I have no idea where one sends paper like
-this - Ill ask the zooniverse team.'}
-). We translated Wherry's improvements from IDL to Python, and integrated this module with the HumVI code. Some additional improvements are also made, such as increased versatility with rebinning.
+A further improvement to the method was implemented by Wherry. Whereas Lupton's algorithm is appropriate for tweaking the look of a single image to bring out interesting features, Wherry lets us standardise this manipulation across many images so their properties are comparable. We translated Wherry's improvements from IDL to Python, and integrated this module with the HumVI code. Some additional improvements are also made, such as increased versatility with rebinning.
 
 A summary of this part of the project (with pseudocode) follows.
 
@@ -671,6 +623,22 @@ A summary of this part of the project (with pseudocode) follows.
 %\end{figure}
 
 
+%%-------------------------------------------------
+\subsection{Finding Optimal Parameters for the Image Manipulation}
+
+`Anupreeta More has made a very nice set of test CFHTLS images for the
+Lens Zoo, and I discussed with her a bit your work: she thinks we
+should do a blind taste test at some point, showing the lens zoo dev
+team her images that have been a) displayed in standard form with
+HumVI and b) deconvolved and then
+displayed in standard form with HumVI, and ask for them to be graded
+for arc visibility. Probably we would want to supply a few different
+standard forms as well (and by "form" I mean {scales,nlin}). We can
+also do image testing at Adler Planetarium on the willing public
+there. The question we want to answer is: "how should we display an
+image to maximize the likelihood of an untrained human seeing
+interesting feature X?"  I have no idea where one sends paper like
+this - Ill ask the zooniverse team.'
 
 
 %%=================================================
@@ -704,7 +672,6 @@ A summary of this part of the project (with pseudocode) follows.
 \underline{Deconvolution}
 \begin{itemize}
 	\item Put in covariance matrix stuff
-	\item use \texttt{scipy.sparse} instead of building my own matrix.
 	\item How does kernel size affect execution time?
 	\item Regularisation method
 	\item Invent quality metrics: each one represents the quantitiave answer to a particular question about some aspect of the reconstructed image -- its "noise" level, the correlated nature of that noise, the number of false SExtractor detections (in the reconstructed image) generated, the SExtractor flux of certain
@@ -993,6 +960,46 @@ Here is pseudocode for calculating the derivatives of $S$.
 \paragraph{Examples}
 
 -- Some examples are given where the standard technique loses an embarrassing amount of detail compared with the new idea. By eye, we clearly distinguish differences between objects which are otherwise just rendered as white blobs.
+
+
+
+
+%%=================================================
+%% Home-Brew Convolution
+%%=================================================
+\section{Home-Brew Convolution Code}
+
+\TODO{Cato: Needs tidying / deleting}
+
+Alternatively, we can simply use a pre-existing module which performs the convolution for us: \texttt{scipy.signal.fftconvolve} does the job nicely. We can even tell this module to reduce the size of the convolved image (\texttt{mode="valid"}), in keeping with the concerns raised in section~\ref{sec:shave}.
+
+However, it would be na\"ive to simply place our trust in SciPy -- their convolution method may be subtly different from the one we wish to use for scientific inference. Thus, we cannot escape having to implement the concolution procedure of equation~\ref{eqn:simple_deconvolve}. Figure~\vref{fig:deconvolution_comparison} shows a comparison, with residuals. Leaving aside the image arteficts from using a small convolution kernel (\MORE FIX!), we can see that the two methods do not agree completely. This is worrying, but according to DWH the problem is almost certainly with my implementation rather than SciPy's, and I am inclined to agree (it might be a simple indexing error). Combined with the fact that SciPy is around 15 times faster, it makes little sense to labour on with my code; so we adopt the SciPy convolution module.
+
+\begin{figure}
+	\def\width{0.3\textwidth}
+	\centering
+	\begin{subfigure}{\width}
+		\includegraphics[width=\textwidth]{../../Data/Deconvolved/gsc_CFHTLS_03_g_sci_rescaled.png}
+		\caption{Original image}
+	\end{subfigure}
+	
+	\begin{subfigure}{\width}
+		\includegraphics[width=\textwidth]{../../Data/Deconvolved/gsc_CFHTLS_03_g_sci_rescaled_MAN.png}
+		\caption{Deconvolved using my procedure and a 3x3 kernel.}
+	\end{subfigure}
+	~
+	\begin{subfigure}{\width}
+		\includegraphics[width=\textwidth]{../../Data/Deconvolved/gsc_CFHTLS_03_g_sci_rescaled_SCI.png}
+		\caption{Deconvolved using SciPy's procedure and a 3x3 kernel.}
+	\end{subfigure}
+	
+	\begin{subfigure}{\width}
+		\includegraphics[width=\textwidth]{../../Data/Deconvolved/gsc_CFHTLS_03_g_sci_rescaled_RES.png}
+		\caption{Residuals.}
+	\end{subfigure}
+	\caption{Deconvolution procedure -- a comparison of my home-made convolution algorithm and SciPy's optimised one. SciPy takes about 1/15 of the time. Note that a 3x3 kernel was used for this test, and there are obvious artifacts introduced around bright points of the image.}
+	\label{fig:deconvolution_comparison}
+\end{figure}
 
 
 \newpage
