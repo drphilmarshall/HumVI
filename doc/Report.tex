@@ -356,6 +356,8 @@ $\mathbf B$ is then a matrix with ${\rm size}(a)$ rows and ${\rm size}(k)$ colum
 \end{enumerate}}
 
 
+In practice, we have some idea of what the kernel should look like: a bright central element\ldots We can use this prior guess to speed up the convergence of the algorithm \MORE needs pseudocode.
+
 %%-------------------------------------------------------------------------------------------
 \subsubsection{Interlude: Honesty Note}
 \label{sec:shave}
@@ -411,13 +413,63 @@ But unfortunately that isn't the end of the story, as equation~\ref{eqn:simple_d
 	\item img\_array = readin(imagefile)\newline~\mbox{}~\hspace{1cm}\#\# Or can be given as straight array
 	\item img\_vec = img\_array.flatten()
 	\item krn\_array = readin(kernelfile)	\newline~\mbox{}~\hspace{1cm}\#\# Or can be given as straight array
-	%\item \MORE?
 	\item krn\_mat = sparse\_diag\_matrix(krn\_array.flatten(), offsets=[0,1,2,\ldots])\newline~\mbox{}~\hspace{1cm}\#\# general gist
-	\item refimg\_vec = sparse\_lsq\_solve(krn\_mat, img\_vec)\newline~\mbox{}~\hspace{1cm}\#\# System is underdetermined \ra iterative solution
+	\item refimg\_vec = sparse\_lsq\_solve(krn\_mat, img\_vec)\label{pnt:sparse_solve}\
+				\newline~\mbox{}~\hspace{1cm}\#\# System is underdetermined \ra iterative solution
 	\item refimg\_vec = stretch(refimg\_vec)\newline~\mbox{}~\hspace{1cm}\#\# Ease of viewing
 	\item refimg = reshape(refimg\_vec)\newline~\mbox{}~\hspace{1cm}\#\# Make into an image-worthy shape
 	\item save\_image(refimg)
 \end{enumerate}}
+
+---------
+
+Consider for a moment point number~\ref{pnt:sparse_solve}. In practice, we can do better than this, since we have some prior information on what the deconvolved image should look like: viz. the original image. Using this guess could dramatically reduce the number of iterations required for convergence. This is how we do it.
+
+We wish to solve an equation of the form
+\begin{equation}
+	\mathbf{A}\vec{x} = \vec{b}
+\end{equation}
+for $\vec x$. We have an initial guess, $\vec{x_0}$; from this we compute a residual vector,
+\begin{equation}
+	\vec{r_0} = \vec{b} - \mathbf{A}\vec{x_0}.
+\end{equation}
+Now we can find a correction to $\vec{x_0}$ by solving the matrix equation
+\begin{equation}
+	\mathbf{A}\vec{\Delta x} = \vec{r_0}.
+\end{equation}
+Then our final estimate for the solution is
+\begin{equation}
+	\vec{x} = \vec{x_0} + \vec{\Delta x}.
+\end{equation}
+
+This should be more accurate and less computationally intensive than doing it without the initial condition.\footnote{Details -- if the same stopping tolerances atol and btol are used for each system, the number of iterations for the two methods will be similar, but the final solution x0 + dx should be more accurate. The only way to reduce the total work is to use a larger stopping tolerance for the second system. If some value btol is suitable for A*x = b, the larger value btol*norm(b)/norm(r0) should be suitable for A*dx = r0.}
+
+For our purposes, the initial guess will just be the observed image; or in the language used above, $\vec{x_0}=\vec{b}$. However, we can't simply plough ahead with this, because the original image and the target image will have different numbers of elements ($\mathbf A$ is not square). This is easily rectified by augmenting the original image vector $\vec b$ with zeroes and using this padded version as $\vec{x_0}$; thankfully there is no ``dishonesty'' here (see section~\ref{sec:shave}), since $\vec{x_0}$ is only a guess in the first place.
+
+We still have to be a little careful about how we achieve this padding: we shouldn't put zeros in the wrong places. If the original image was a square of side $n$ pixels, and the kernel image a square of side $m$ pixels, then the initial guess image should have side $n+m-1$ pixels. The vector $\vec{x_0}$ must therefore be padded with $(n+m-1)^2-n^2$ zeroes, distributed equally at the beginning and end of each stride. This could be achieved by doing the following:
+
+\texttt{img\_vec\_padded = img\_vec.append(zeros(floor(m/2)), [[i*stride, -i*stride] }\\~\mbox{}\hspace{10cm}\texttt{for i in range(len(img\_vec))])}
+
+With all this in mind, it seems we modify our algorithm above:
+\texttt{\begin{enumerate}
+	\item img\_array = readin(imagefile)\
+				\newline~\mbox{}~\hspace{1cm}\#\# Or can be given as straight array
+	\item img\_vec = img\_array.flatten()
+	\item krn\_array = readin(kernelfile)	\
+				\newline~\mbox{}~\hspace{1cm}\#\# Or can be given as straight array
+	\item krn\_mat = toeplitz\_matrix(krn\_array.flatten())
+				\newline~\mbox{}~\hspace{1cm}\#\# general gist
+	\item krn\_mat = sparse\_diag(krn\_mat)
+	\item Dim = sparse\_lsq\_solve(krn\_mat, img\_vec - krn\_mat*img\_vec\_padded)\
+				\newline~\mbox{}~\hspace{1cm}\#\# Find correction from residual
+	\item refimg\_vec = img\_vec + Dim
+	\item refimg\_vec = stretch(refimg\_vec)
+				\newline~\mbox{}~\hspace{1cm}\#\# Ease of viewing
+	\item refimg = reshape(refimg\_vec)
+				\newline~\mbox{}~\hspace{1cm}\#\# Make into an image-worthy shape
+	\item save\_image(refimg)
+\end{enumerate}}
+
 
 %%=================================================
 %% Image Noise
