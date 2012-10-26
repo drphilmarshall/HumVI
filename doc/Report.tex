@@ -427,28 +427,30 @@ Consider for a moment point number~\ref{pnt:sparse_solve}. In practice, we can d
 
 We wish to solve an equation of the form
 \begin{equation}
-	\mathbf{A}\vec{x} = \vec{b}
+	\vec{a} = \mathbf{K}\vec{b}
 \end{equation}
-for $\vec x$. We have an initial guess, $\vec{x_0}$; from this we compute a residual vector,
+for $\vec b$. We have an initial guess, $\vec{b_0}$; from this we compute a residual vector,
 \begin{equation}
-	\vec{r_0} = \vec{b} - \mathbf{A}\vec{x_0}.
+	\vec{r_0} = \vec{a} - \mathbf{K}\vec{b_0}.
 \end{equation}
-Now we can find a correction to $\vec{x_0}$ by solving the matrix equation
+If our initial guess is good, the elements of this vector should be small. Now we can find the correction to $\vec{b_0}$ by solving the matrix equation
 \begin{equation}
-	\mathbf{A}\vec{\Delta x} = \vec{r_0}.
+	\mathbf{K}\vec{\Delta b} = \vec{r_0},
 \end{equation}
-Then our final estimate for the solution is
+using least-squares or something similar. Then our final estimate for the solution is
 \begin{equation}
-	\vec{x} = \vec{x_0} + \vec{\Delta x}.
+	\vec{b} = \vec{b_0} + \vec{\Delta b}.
 \end{equation}
 
-This should be more accurate and less computationally intensive than doing it without the initial condition.\footnote{Details -- if the same stopping tolerances atol and btol are used for each system, the number of iterations for the two methods will be similar, but the final solution x0 + dx should be more accurate. The only way to reduce the total work is to use a larger stopping tolerance for the second system. If some value btol is suitable for A*x = b, the larger value btol*norm(b)/norm(r0) should be suitable for A*dx = r0.}
+This should be more accurate and less computationally intensive than doing it without the initial condition.\footnote{Details -- if the same stopping tolerances atol and btol are used for each system, the number of iterations for the two methods will be similar, but the final solution x0 + dx should be more accurate. The only way to reduce the total work is to use a larger stopping tolerance for the second system. If some value btol is suitable for A*x = b, the larger value btol*norm(b)/norm(r0) should be suitable for K*db = r0.}
 
-For our purposes, the initial guess will just be the observed image; or in the language used above, $\vec{x_0}=\vec{b}$. However, we can't simply plough ahead with this, because the original image and the target image will have different numbers of elements ($\mathbf A$ is not square). This is easily rectified by augmenting the original image vector $\vec b$ with zeroes and using this padded version as $\vec{x_0}$; thankfully there is no ``dishonesty'' here (see section~\ref{sec:shave}), since $\vec{x_0}$ is only a guess in the first place.
+For our purposes, the initial guess will just be the observed image; or in the language used above, $\vec{b_0}=\vec{a}$. However, we can't simply plough ahead with this, because the original image and the target image will have different dimensions ($\mathbf A$ is not square). This is easily rectified by augmenting the original image vector $\vec a$ with zeroes and using this padded version as $\vec{b_0}$; thankfully there is no ``dishonesty'' here (see section~\ref{sec:shave}), since $\vec{b_0}$ is only a guess in the first place.
 
-We still have to be a little careful about how we achieve this padding: we shouldn't put zeros in the wrong places. If the original image was a square of side $n$ pixels, and the kernel image a square of side $m$ pixels, then the initial guess image should have side $n+m-1$ pixels. The vector $\vec{x_0}$ must therefore be padded with $(n+m-1)^2-n^2$ zeroes, distributed equally at the beginning and end of each stride. This could be achieved by doing the following:
+We still have to be a little careful about how we achieve this padding: we shouldn't put zeros in the wrong places. If the original image was a square of side $n$ pixels, and the kernel image a square of side $m$ pixels, then the initial guess image should have side $n+m-1$ pixels. The vector $\vec{b_0}$ must therefore be padded with $(n+m-1)^2-n^2$ zeroes, distributed equally at the beginning and end of each stride. This could be achieved by doing the following:
 
-\texttt{img\_vec\_padded = img\_vec.append(zeros(floor(m/2)), [[i*stride, -i*stride] }\\~\mbox{}\hspace{10cm}\texttt{for i in range(len(img\_vec))])}
+\texttt{img\_vec\_padded = img\_vec.append(zeros(floor(m/2)), [[i*stride, -i*stride] }\\~\mbox{}\hspace{10cm}\texttt{for i in range(img\_vec.height)])},
+
+or by embedding the original image into a larger array (this is what I actually do).
 
 With all this in mind, it seems we modify our algorithm above:
 \texttt{\begin{enumerate}
@@ -470,6 +472,23 @@ With all this in mind, it seems we modify our algorithm above:
 	\item save\_image(refimg)
 \end{enumerate}}
 
+---------
+
+Some problems I've noticed:
+
+\begin{itemize}
+	\item It takes a long long time to solve for the image. Even something of 50x50 pixels takes ten minutes on my computer.
+	\item It takes longer to solve the sparse system using Scipy's sparse linalg module than using Numpy's straight linalg module. Weird.
+	\begin{itemize}
+		\item \texttt{linalg.lstsq} uses householder bidiagonalization to decompose. If your matrix is m by n, the complexity will be O(max(m, n) * min(m, n)\^2)
+	\end{itemize}
+	\item Oh, and the results are wrong.
+	\begin{itemize}
+		\item Is this a problem with how I construct the kernel matrix?
+		\item Residuals seem to have structure.
+	\end{itemize}	
+	\item My ``initial guess'' procedure doesn't seem to speed up convergence at all -- even when I give the exact solution as my initial guess! Is there some large overhead for using least-squares?
+\end{itemize}
 
 %%=================================================
 %% Image Noise
@@ -729,8 +748,7 @@ this - Ill ask the zooniverse team.'
 	\item Invent quality metrics: each one represents the quantitiave answer to a particular question about some aspect of the reconstructed image -- its "noise" level, the correlated nature of that noise, the number of false SExtractor detections (in the reconstructed image) generated, the SExtractor flux of certain
 objects of interest, the number of inspectors who identify feature X, etc etc etc. We can propose and discuss these aspects after seeing some images.
 	\item arcsec\ra pixels method; will need header information.
-	\item Assert target PSFs of width 0.3,0.4,0.5,0.6,0.7,0.8,0.9, 1.0 arcsec FWHM, and make deconvolved images for each value. Then plot your quality metric(s) against FWHM.
-	\item Homogenise PSF across different fields. \TODO{What is the best way to do this?} Use largest PSF $\rightarrow$ no danger of violating sampling theorem; but this may be way too blurry to be useful. Pickle.
+	\item Assert target PSFs of width 0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0 arcsec FWHM, and make deconvolved images for each value. Then plot your quality metric(s) against FWHM.
 \end{itemize}
 
 \underline{Combining C\&D}

@@ -339,37 +339,7 @@ def stretch(fits_original, vmin=None,vmax=None):
 	    
 	return vmin,vmax
 	
-##============================================================
-## NOT WORKING
-def stretchP(png_original):
-	
-	image=Image.open(png_original)
-	im_data = numpy.array(image.getdata())[:,0]	##?
-	
-	## Find median and 97.5% value
-	a=numpy.median(image)
-	b=numpy.sort(im_data.flatten())[0.975*len(im_data.flatten())]
-	
-	## Stretch parameters
-	sigma = 0.5*(b-a)
-	vmin = a-5.0*sigma
-	vmax = a+10.0*sigma
-	## Rescale
-	image = linear_rescale(image, vmin,vmax)	
-	
-	## Prepare destination directory
-	outdir=""#os.path.dirname(png_original)+"/Enhanced_Original/"
-	#if os.path.isdir(outdir)==False: os.mkdir(outdir)
-	## Outfile name
-	outfile = outdir+os.path.basename(png_original)[:-4]+"_rescaled.png"
-	
-	imag = Image.new("L",image.size,None)
-	imag.putdata(image,1.0)
-	imag.save(outfile)
-	
-	#scipy.misc.imsave(outfile, image)
-	
-	return
+
 
 ##============================================================
 ## Linear scaling of input array
@@ -396,7 +366,7 @@ def linear_rescale(inputArray, scale_min=None, scale_max=None):
 def stretch_params(array):
 	## Find median and 97.5% value
 	a=numpy.median(array)
-	b=numpy.sort(array.flatten())[0.975*len(array.flatten())]		  
+	b=numpy.sort(array.flatten())[0.975*len(array.flatten())]
 	## Stretch parameters
 	sigma = 0.5*(b-a)
 	vmin = a-5.0*sigma

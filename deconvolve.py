@@ -8,7 +8,7 @@ from OSMethods import file_seek
 import time
 import getopt
 import os
-import scipy #
+import scipy
 from sys import argv
 
 	

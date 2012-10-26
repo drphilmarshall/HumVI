@@ -13,6 +13,7 @@ sys.path.append("../decon/")
 sys.path.append("../misc/")
 import DeconvolveToTargetPSF as DT
 import numpy,scipy
+import time
 
 def decontest():
 	
@@ -132,28 +133,30 @@ def dectest():
 
 def imdectest():
 	
+	t0 = time.time()
+	
 	## Make composite image
-	origarr = DT.Gauss_2D(*[50, 7., 7., 25, 25, 1.])
-	bigorig = numpy.tile(origarr, [2,2])
-	scipy.misc.imsave("imdec_obig.png",bigorig)
+	psfobs = DT.Gauss_2D(*[50, 7., 7., 25, 25, 1.])
+	scipy.misc.imsave("imdec_psfobs.png",psfobs)
+	bigorig = numpy.tile(psfobs, [2,2])
+	#scipy.misc.imsave("imdec_obig.png",bigorig)
 	
 	## Target
-	psf_ref = DT.Gauss_2D(*[50, 2., 2., 25, 25, 1.])
-	scipy.misc.imsave("imdec_psfref.png",psf_ref)
+	psfref = DT.Gauss_2D(*[50, 3., 3., 25, 25, 1.])
+	scipy.misc.imsave("imdec_psfref.png",psfref)
 	
-	## Kernel
-	kernarr = DT.get_kernel(psf_ref,origarr, [5,5], False)###SWITCH
-	print kernarr
-	#kernarr = numpy.array([[0,-1,0],[-1,4,-1],[0,-1,0]])
+	## Kernel: psfobs = psfref * k --> kernel
+	kernarr = DT.get_kernel(psfobs, psfref, [5,5], False)
 	scipy.misc.imsave("imdec_kern.png",kernarr)
 	
-	## Deconvolution
-	decarr = DT.deconvolve_image(psf_ref, kernarr)	###SWITCH
-	#decarr = scipy.signal.fftconvolve(bigorig, kernarr,"same")
+	## Deconvolution: img = kern * refimg --> refimg
+	decarr = DT.deconvolve_image(psfobs, kernarr, vb=False)
 	scipy.misc.imsave("imdec_odec.png",decarr)
+	
+	print "Total",round(time.time()-t0,3)
 	
 	return	
 	
 ##============================================================
 if __name__=="__main__":
-	kerntest2()
+	imdectest()

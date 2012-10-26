@@ -6,6 +6,7 @@
 import numpy
 import scipy
 import os
+import sys; sys.path.append("../misc/")
 import pyfits
 import Image
 import time
@@ -332,7 +333,7 @@ def stacker(img_arr, krn_h,krn_w):
 	return stacked
 	
 ##============================================================
-## Delete rows and columns from edges of an array
+## Delete rows and columns from edges of a 2D array
 ## so that it has shape = eudim.
 def shave(eudim, arr):
 	if ((numpy.array(arr.shape)-eudim)%2).all()!=0:
@@ -344,6 +345,16 @@ def shave(eudim, arr):
 		arr=numpy.delete(arr, 0, 1)	
 		arr=numpy.delete(arr, -1, 1)
 	return arr
+## Add rows and columns to edges of a 2D array
+## so that it has shape = eudim.
+def pad(eudim, arr):
+	dimdiff = (eudim-numpy.array(arr.shape))
+	if (dimdiff%2).all()!=0:
+		print "pad: odd pad -> over-pad."
+	newarr = numpy.zeros(eudim)
+	newarr[dimdiff[0]/2:-dimdiff[0]/2,dimdiff[1]/2:-dimdiff[1]/2] = arr
+	return newarr
+	
 
 ##============================================================
 ## Marix equation solvers
@@ -369,7 +380,7 @@ def QRsolve(X,y):
 
 ## Solve system using least squares		
 def LSsolve(X,y):
-	t0=time.time()
+	#t0=time.time()
 	kvec,resi,rank,sing = numpy.linalg.lstsq(X,y)
 	#print "LSsolve time",round(time.time()-t0,3),"seconds"
 	return kvec
@@ -439,88 +450,186 @@ def deconvolve_image(imagefile, kernel, vb=False):
 		pass
 	
 	## Kernel dimensions
-	kernel_h,kernel_w = kernel.shape
+	kernel_h,kernel_w = kernel.shape	
+	
+	"""	
+	## What follows are convolution methods -- it turns out
+	## that these are not appropriate here.
+	if False:
+	##------------------------------------------------------------	
+		## Compute linalg objects from images
 		
-	# Should also check match with imagefile #
-	
-##------------------------------------------------------------	
-	## Compute linalg objects from images
-	
-	## Honest dimensions for scene
-	scene_dim = numpy.array(imgarr.shape)-numpy.array(kernel.shape)+1
-	scene_siz = scene_dim[0]*scene_dim[1]
-	
-##------------------------------------------------------------
+		## Honest dimensions for scene
+		scene_dim = numpy.array(imgarr.shape)-numpy.array(kernel.shape)+1
+		scene_siz = scene_dim[0]*scene_dim[1]
 		
-	convmeth = "scipy"
-	
-	## Manual convolution
-	if convmeth=="manual":	
-	
-		## 1D array for SCENE (convolved with Gaussian)
-		g_sc = numpy.empty(imgarr.size)#scene_siz
-		## 1D array for IMAGE
-		stride = imgarr.shape[0]
-		imgarr = imgarr.flatten()
+	##------------------------------------------------------------
+		
+		convmeth = "scipy"
+		
+		## Manual convolution
+		if convmeth=="manual":	
+		
+			## 1D array for SCENE (convolved with Gaussian)
+			refimg = numpy.empty(imgarr.size)#scene_siz
+			## 1D array for IMAGE
+			stride = imgarr.shape[0]
+			imgarr = imgarr.flatten()
+
+		##------------------------------------------------------------
+		## Manual matrix product
+			
+			## Initialise kernel "vector"
+			len_krn_lin = (stride)*(kernel_h-1)+kernel_w	## Still keeps a lot of zeros
+			krn_lin = numpy.zeros(len_krn_lin)
+			## Loop over slices in the kernel image
+			for j in range (kernel_h):
+				startcol = j*stride
+				krn_lin[startcol:startcol+kernel_w] = kernel[j,:]
+				
+			t0 = time.time()
+			## Perform linalg product
+				## i labels the scene pixel and the slice in the original
+			for i in range (scene_siz):
+				imageslice = imgarr[i:i+len_krn_lin]
+				refimg[i] = numpy.dot(krn_lin,imageslice)
+			if vb: print "DeconvolveToTargetPSF.py: deconvolve_image: vector multiplication took",\
+						round(time.time()-t0,2),"seconds."
+			
+			## Delete spurious elements (from overlapping)
+			i=len(refimg)
+			while i>=0:
+				if i%stride+kernel_w > stride:
+					refimg = numpy.delete(refimg,i)
+				i-=1
+			## Delete spurious elements from declaring it too big
+			refimg = numpy.delete(refimg,slice(scene_siz-len(refimg)-1,-1))
+			if scene_siz-len(refimg): print "LINE #"+str(lineno())+": size discrepancy"
+
 
 	##------------------------------------------------------------
-	## Manual matrix product
 		
-		## Initialise kernel "vector"
-		len_krn_lin = (stride)*(kernel_h-1)+kernel_w	## Still keeps a lot of zeros
-		krn_lin = numpy.zeros(len_krn_lin)
-		## Loop over slices in the kernel image
-		for j in range (kernel_h):
-			startcol = j*stride
-			krn_lin[startcol:startcol+kernel_w] = kernel[j,:]
+		elif convmeth=="scipy":
+			t0=time.time()
+			## Do convolution using scipy
+			refimg = convolve(imgarr, kernel, mode="valid")
+			if vb: print "DeconvolveToTargetPSF.py: deconvolve_image: SciPy convolution took",\
+						round(time.time()-t0,2),"seconds."
 			
-		t0 = time.time()
-		## Perform linalg product
-			## i labels the scene pixel and the slice in the original
-		for i in range (scene_siz):
-			imageslice = imgarr[i:i+len_krn_lin]
-			g_sc[i] = numpy.dot(krn_lin,imageslice)
-		if vb: print "DeconvolveToTargetPSF.py: deconvolve_image: vector multiplication took",\
-					round(time.time()-t0,2),"seconds."
-		
-		## Delete spurious elements (from overlapping)
-		i=len(g_sc)
-		while i>=0:
-			if i%stride+kernel_w > stride:
-				g_sc = numpy.delete(g_sc,i)
-			i-=1
-		## Delete spurious elements from declaring it too big
-		g_sc = numpy.delete(g_sc,slice(scene_siz-len(g_sc)-1,-1))
-		if scene_siz-len(g_sc): print "LINE #"+str(lineno())+": size discrepancy"
-
-
+		else:
+			print "LINE #"+str(lineno())+": convmeth error, abort."
+			return
+	"""
 ##------------------------------------------------------------
 	
-	elif convmeth=="scipy":
-		t0=time.time()
-		## Do convolution using scipy
-		g_sc = convolve(imgarr, kernel, mode="valid")
-		if vb: print "DeconvolveToTargetPSF.py: deconvolve_image: SciPy convolution took",\
-					round(time.time()-t0,2),"seconds."
+	## Have kernel and original image; now we need to solve the matrix equation
+	## Kx = b, where K is kernel, x is target image, and b is our observed image.
+	
+	## FIRST, dimensions of scene image are greater than those of data image
+	refimg_dim = numpy.array(imgarr.shape) + numpy.array(kernel.shape) - 1
+	refimg_size = refimg_dim[0]*refimg_dim[1]	
+	
+	
+	## SECOND, construct matrix K from kernel array.
+	
+	## kernmat should be imgarr.size by refimg_size
+			## I think this could be done without using scipy.sparse --
+			## just save one line and shift multiplication range over by 1.
+			## But for concreteness, let's do this for now.
+			
+	## What is first row of kernmat?
+	krow = numpy.zeros(refimg_size)
+	for i in range(kernel_h):
+		j = i*refimg_dim[0]	## Stride#
+		krow[j:j+kernel_w] = kernel[i,:]
+	## First column of kernmat (declare too large)
+	kcol = numpy.zeros(refimg_size); kcol[0]=krow[0]
+	
+	## Some rows of the kernel matrix will be no good -- they represent pixel where the convolution
+	## oversteps the image border
+		## There must be a better way of doing this
+	badrow = [numpy.arange(i*refimg_dim[0]-kernel_w+2, i*refimg_dim[0]+1) for i in range(1,refimg_dim[1])]
+	
+	## Create dense Toeplitz matrix (not square)
+	kernmat = scipy.linalg.toeplitz(kcol,krow)	
+	## Delete spurious rows
+	kernmat = numpy.delete(kernmat, badrow, axis=0)	
+	## Also trailing zeros from declaring kcol too large
+	kernmat = kernmat[:imgarr.size,:]
+	## Don't need these any more
+	kcol=None; krow=None; badrow = None
 		
+	t0 = time.time()
+	## Turn dense kernmat into a sparse matrix
+	#kernmat = scipy.sparse.dia_matrix(kernmat)
+	print time.time()-t0,"for d->sparse"
+	
+	"""
+	Building own sparse matrix
+	if 0:
+		## Will enforce these dimensions
+		kernmat_dim = (imgarr.size,refimg_size)
+		## Declare too large
+		offsets = numpy.arange(0,refimg_size)
+		
+		offsets = numpy.delete(offsets, bad)
+		## Account for declaring too big in the first place
+		offsets = offsets[:kernmat_dim[0]]
+		
+		## Turn kernmat1 into the right shape for sparse
+		kernmat1 = kernmat1.reshape([1,kernmat1.size]).repeat(kernmat_dim[0],axis=0)
+		## Generate sparse matrix
+		kernmat = scipy.sparse.dia_matrix((kernmat1,offsets), kernmat_dim)
+		k = kernmat.todense()
+		## Delete big arrays
+		del(offsets); del(kernmat1)
+			### A better way might be to iteratively construct the matrix?
+	"""	
+	
+	## THIRD, construct vector b from observed image
+	imgvec = imgarr.flatten()
+		
+	## FOURTH, solve the equation Kx = b
+	## The system of equations is UNDERdetermined
+	t0=time.time()
+	
+	## Decide whether to use initial guess or not
+	if False:
+		print "correction"
+		## Make initial guess; must be conformable
+		refimg0 = pad(refimg_dim, imgarr).flatten()
+		## Solve matrix equation K*(dx)=res
+		residuals = imgvec-numpy.dot(kernmat,refimg0)
+		#correction,istop,itn = scipy.sparse.linalg.lsqr(kernmat, residuals, calc_var=False)[:3]
+		correction,resi = numpy.linalg.lstsq(kernmat, residuals)[:2]
+		## Add initial solution to correction
+		refimgvec = refimg0 + correction
+		## Tidy up
+		correction = None; residuals = None; refimg0 = None
+	## Or just straight solve
 	else:
-		print "LINE #"+str(lineno())+": convmeth error, abort."
-		return
+		print "straight"
+		#refimgvec,istop,itn,r1norm,r2norm = scipy.sparse.linalg.lsqr(kernmat, imgvec, calc_var=False)[:5]
+		refimgvec,resi = numpy.linalg.lstsq(kernmat, imgvec)[:2]
 	
+	if vb:
+		print "image_deconvolve: least-squares converged to reference image in",itn,"iterations /",\
+					round(time.time()-t0,2),"seconds."
+
+##------------------------------------------------------------					
+	## Check: reverse procedure
+	check = True
+	if check is True:
+		resi = (numpy.dot(kernmat,refimgvec)-imgvec).reshape(imgarr.shape)
+		scipy.misc.imsave("check_resi.png", resi)
+					
 ##------------------------------------------------------------
-	"""
-	## Reshape ## No longer necessary
-	if g_sc.shape[0]!=scene_dim[0] or g_sc.shape[1]!=scene_dim[1]:
-		if vb: print "DeconvolveToTargetPSF.py: deconvolve_image: reshaping."
-		try:
-			g_sc = g_sc.reshape(scene_dim)
-		except ValueError:	
-			print "DeconvolveToTargetPSF.py: deconvolve_image: output has wrong shape. Investigate."
-	"""
+	## Reshape into an image
+	refimg = refimgvec.reshape(refimg_dim)
 ##------------------------------------------------------------
 	
 	## Filter out (computer) noise
-	g_sc[g_sc<cutoff] = 0.0
+	refimg[refimg<cutoff] = 0.0
 	
 ##------------------------------------------------------------	
 
@@ -540,9 +649,9 @@ def deconvolve_image(imagefile, kernel, vb=False):
 	## Rescale (linear stretch)
 	if 1:
 		## Scaling parameters
-		vmin,vmax = stretch_params(g_sc)
+		vmin,vmax = stretch_params(refimg)
 		## Stretch
-		g_sc = linear_rescale(g_sc, vmin, vmax)
+		refimg = linear_rescale(refimg, vmin, vmax)
 		## Modify filename
 		outfile = outfile+"_rescaled"
 	
@@ -551,11 +660,11 @@ def deconvolve_image(imagefile, kernel, vb=False):
 	if os.path.isfile(outfile+".png"):  os.remove(outfile+".png")
 	
 	## Save image as FITS and as PNG
-	makeFITS(outfile+".fits", g_sc, header)
-	scipy.misc.imsave(outfile+".png", g_sc)
+	#makeFITS(outfile+".fits", refimg, header)
+	#scipy.misc.imsave(outfile+".png", refimg)
 	if vb: print "DeconvolveToTargetPSF.py: deconvolve_image: image saved to",outfile+".fits"
 	
-	return g_sc
+	return refimg
 	
 	
 ##============================================================	
