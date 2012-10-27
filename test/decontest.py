@@ -139,7 +139,7 @@ def imdectest():
 	psfobs = DT.Gauss_2D(*[50, 7., 7., 25, 25, 1.])
 	scipy.misc.imsave("imdec_psfobs.png",psfobs)
 	bigorig = numpy.tile(psfobs, [2,2])
-	#scipy.misc.imsave("imdec_obig.png",bigorig)
+	scipy.misc.imsave("imdec_obig.png",bigorig)
 	
 	## Target
 	psfref = DT.Gauss_2D(*[50, 3., 3., 25, 25, 1.])
