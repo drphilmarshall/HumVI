@@ -609,6 +609,9 @@ def deconvolve_image(imagefile, kernel, vb=False):
 	## Or just straight solve
 	else:
 		print "straight"
+		## Accaount for noise
+		#####
+		## Sparse method or regular
 		#refimgvec,istop,itn,r1norm,r2norm = scipy.sparse.linalg.lsqr(kernmat, imgvec, calc_var=False)[:5]
 		refimgvec,resi = numpy.linalg.lstsq(kernmat, imgvec)[:2]
 	

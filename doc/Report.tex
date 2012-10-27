@@ -472,23 +472,82 @@ With all this in mind, it seems we modify our algorithm above:
 	\item save\_image(refimg)
 \end{enumerate}}
 
----------
 
-Some problems I've noticed:
+
+
+%%-------------------------------------------------------------------------------------------
+\subsubsection{Testing}
+
+\paragraph{Now} This is what I'm doing at the moment to test my deconvolution code (both with and without the initial condition).
+\texttt{\begin{enumerate}
+	\item \psfobs = Gaussian(bigwidth)
+	\item \psfref = Gaussian(smallwidth)
+	\item kernel = get\_kernel(\psfref \ra \psfref)
+	\item decon = deconvolve(\psfobs, kernel)
+	\item saveimage(decon)
+\end{enumerate}}
+
+This finds the convolution kernel which takes a small Gaussian to a large Gaussian. Then it finds the image, \texttt{decon}, which must be convolved with that kernel to give the large Gaussian. \texttt{decon} \emph{should} be the small Gaussian, right?
+
+So far this has not been the case; see figure~\ref{fig:decontest}, which shows the original image, the target PSF, the deconvolved image and the kernel (calculated according to the prescription above). The deconvolved image looks exactly like the original image, not the reference PSF as hoped.
+ 
+\begin{figure}
+ 	\def\width{0.2\linewidth}
+ 	\def\scale{1}
+ 	\centering
+ 	\includegraphics[scale=\scale]{"../test/imdec_psfobs"}
+ 	\includegraphics[scale=\scale]{"../test/imdec_psfref"}\\
+ 	\includegraphics[scale=\scale]{"../test/imdec_odec"}
+ 	\includegraphics[scale=6]{"../test/imdec_kern"}
+ 	\caption{original image, target PSF, deconvolved image and the kernel}
+ 	\label{fig:decontest}
+\end{figure}
+
+Other than the results being wrong, here are some other things I've noticed:
 
 \begin{itemize}
-	\item It takes a long long time to solve for the image. Even something of 50x50 pixels takes ten minutes on my computer.
+	\item It takes a long time to solve for the image. Even something of 50x50 pixels takes ten minutes on my computer.
 	\item It takes longer to solve the sparse system using Scipy's sparse linalg module than using Numpy's straight linalg module. Weird.
 	\begin{itemize}
-		\item \texttt{linalg.lstsq} uses householder bidiagonalization to decompose. If your matrix is m by n, the complexity will be O(max(m, n) * min(m, n)\^2)
-	\end{itemize}
-	\item Oh, and the results are wrong.
-	\begin{itemize}
-		\item Is this a problem with how I construct the kernel matrix?
-		\item Residuals seem to have structure.
+		\item (\texttt{linalg.lstsq} uses householder bidiagonalization to decompose. For an m by n matrix, the complexity will be $\mathcal{O}(\max(m, n) * \min(m, n)^2$).)
 	\end{itemize}	
 	\item My ``initial guess'' procedure doesn't seem to speed up convergence at all -- even when I give the exact solution as my initial guess! Is there some large overhead for using least-squares?
 \end{itemize}
+
+---
+
+Once this works, I'll apply the same procedure to a larger image with several objects of size \psfobs; e.g. figure~\ref{fig:tiled}.
+\begin{figure}
+	\includegraphics[scale=1]{"../test/imdec_obig"}
+	\label{fig:tiled}
+\end{figure}
+
+
+
+\paragraph{Next} Hogg emphasised the following (26/10):
+
+\begin{itemize}
+	\item The data image should be bigger than the scene;
+\end{itemize}
+i.e. pad the data with zeros. This goes against the discussion of section~\ref{sec:shave}. The reason for it is that we want to solve an overdetermined system rather than underdetermined (I had previously assumed /tried to solve the underdetermined system and then regularise / choose one solution somehow). Since this only causes problems at the edges, the larger the image, the smaller the problem.
+
+\begin{itemize}
+	\item For Gaussian data (large) and a Gaussian kernel (small), find the scene (medium).
+	\item For Gaussian data (large) and a Gaussian scene (medium), find the kernel (small).
+\end{itemize}
+Can solve these exactly, so compare the results with theory predictions.
+
+\TODO{Cato: this is what I'm already doing, but the kernel does not come out to be a Gaussian (\ref{fig:decontest}). What's going on?}
+
+\begin{itemize}
+	\item To speed things up, it may be possible to do the linalg-solve without computing the kernel matrix and performing numerous matrix products.
+\end{itemize}
+The syntax is something like \texttt{solve(function, b)}, where \texttt{function} would be the operation I use to get the kernel matrix. Investigate this.
+
+
+
+
+
 
 %%=================================================
 %% Image Noise
@@ -602,7 +661,7 @@ Note that inclusion of this covariance matrix has an additional advantage.
 
 Occam's razor
 
-
+\FIG{Before smoothing, after smoothing}
 
 %%=================================================
 %% Image Manipulation
@@ -610,7 +669,7 @@ Occam's razor
 \subsection{Image Manipulations}
 
 \begin{itemize}
-	\item Making them viewable by humans -- stretch
+	\item Making them viewable by humans -- stretch. \FIG{Before after stretch}
 	\item .psf file conversion
 	\item FITS conversion
 \end{itemize}

@@ -146,7 +146,7 @@ def imdectest():
 	scipy.misc.imsave("imdec_psfref.png",psfref)
 	
 	## Kernel: psfobs = psfref * k --> kernel
-	kernarr = DT.get_kernel(psfobs, psfref, [5,5], False)
+	kernarr = DT.get_kernel(psfref, psfobs, [5,5], False)
 	scipy.misc.imsave("imdec_kern.png",kernarr)
 	
 	## Deconvolution: img = kern * refimg --> refimg
