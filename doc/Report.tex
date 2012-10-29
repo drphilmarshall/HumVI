@@ -505,13 +505,17 @@ So far this has not been the case; see figure~\ref{fig:decontest}, which shows t
 
 Other than the results being wrong, here are some other things I've noticed:
 
-\begin{itemize}
-	\item It takes a long time to solve for the image. Even something of 50x50 pixels takes ten minutes on my computer.
+\begin{itemize}	
+	\item For Gaussian target and data, the kernel does not come out to be a Gaussian (\ref{fig:decontest}). What's going on?
+	\item It takes a long time to solve for the image. Even something of 100x100 pixels takes ten minutes on my computer.
 	\item It takes longer to solve the sparse system using Scipy's sparse linalg module than using Numpy's straight linalg module. Weird.
 	\begin{itemize}
 		\item (\texttt{linalg.lstsq} uses householder bidiagonalization to decompose. For an m by n matrix, the complexity will be $\mathcal{O}(\max(m, n) * \min(m, n)^2$).)
 	\end{itemize}	
 	\item My ``initial guess'' procedure doesn't seem to speed up convergence at all -- even when I give the exact solution as my initial guess! Is there some large overhead for using least-squares?
+	\begin{itemize}
+		\item Hogg says that the initial guess shouldn't help much because least squares is so fast. That doesn't explain why it still takes a long time when given exact solution.
+	\end{itemize}	
 \end{itemize}
 
 ---
@@ -520,6 +524,7 @@ Once this works, I'll apply the same procedure to a larger image with several ob
 \begin{figure}
 	\includegraphics[scale=1]{"../test/imdec_obig"}
 	\label{fig:tiled}
+	\caption{}
 \end{figure}
 
 
@@ -532,20 +537,74 @@ Once this works, I'll apply the same procedure to a larger image with several ob
 i.e. pad the data with zeros. This goes against the discussion of section~\ref{sec:shave}. The reason for it is that we want to solve an overdetermined system rather than underdetermined (I had previously assumed /tried to solve the underdetermined system and then regularise / choose one solution somehow). Since this only causes problems at the edges, the larger the image, the smaller the problem.
 
 \begin{itemize}
-	\item For Gaussian data (large) and a Gaussian kernel (small), find the scene (medium).
-	\item For Gaussian data (large) and a Gaussian scene (medium), find the kernel (small).
-\end{itemize}
-Can solve these exactly, so compare the results with theory predictions.
-
-\TODO{Cato: this is what I'm already doing, but the kernel does not come out to be a Gaussian (\ref{fig:decontest}). What's going on?}
-
-\begin{itemize}
 	\item To speed things up, it may be possible to do the linalg-solve without computing the kernel matrix and performing numerous matrix products.
 \end{itemize}
 The syntax is something like \texttt{solve(function, b)}, where \texttt{function} would be the operation I use to get the kernel matrix. Investigate this.
 
 
+---------
 
+A good test problem to pose is one where we know the answer in advance. An example for us to try could be a system where each image (data, kernel and scene) is a 2D Gaussian of some width. This relies on the (remarkable) property that the convolution of two Gaussians is another Gaussian:
+\begin{equation}
+	\mathcal{G}(r,\sigma_1^2) \ast \mathcal{G}(r,\sigma_2^2) = \mathcal{G}(r, \sigma_1^2+\sigma_2^2).
+	%\frac{1}{\sqrt{2\pi\sigma_1^2}}\exp\left[{-\frac{r^2}{2\sigma_1^2}}\right] \ast \frac{1}{\sqrt{2\pi\sigma_2^2}}\exp\left[{-\frac{r^2}{2\sigma_2^2}}\right] = \frac{1}{\sqrt{2\pi(\sigma_1^2+\sigma_2^2)}}\exp\left[{-\frac{r^2}{2(\sigma_1^2+\sigma_2^2)}}\right]
+\end{equation}
+To be totally explicit: if we pick our scene image to be a Gaussian with width $\sigma_1$ and our kernel to be a Gaussian with width $\sigma_2$, the data image will be a third Gaussian with the quadrature-sum width.
+
+The results are in figure~\vref{fig:hoggtest}. Simple code is on page~\pageref{cde:hoggtest}.
+
+\begin{figure}[h]
+ 	\def\width{0.2\linewidth}
+ 	\def\scale{2}
+ 	\centering
+ 	\includegraphics[scale=\scale]{"../test/hoggtest_scene_true"}
+ 	\includegraphics[scale=\scale]{"../test/hoggtest_scene"}\\
+ 	\includegraphics[scale=\scale]{"../test/hoggtest_data_true"}
+ 	\includegraphics[scale=\scale]{"../test/hoggtest_data"}\\
+ 	\includegraphics[scale=6]{"../test/hoggtest_kernel_true"}
+ 	\includegraphics[scale=6]{"../test/hoggtest_kernel"}\\
+ 	\caption{Scene, data and kernel (scaled 2x,2x,6x). On left is the ``correct'' image (2D Gaussian). On the right is output of program. Note each image has different intesity scale which is unhelpful.}
+ 	\label{fig:hoggtest}
+\end{figure}
+
+
+\newpage
+\label{cde:hoggtest}\begin{verbatim}
+def hoggtest():
+		
+	t0 = time.time()
+	
+	## Define true scene, kernel, and data
+		## Arguments are image size, width of Gaussian (x,y), centre (x,y), total flux
+	scene_t  = DT.Gauss_2D(*[30, 4., 4., 15, 15, 1.])
+	kernel_t = DT.Gauss_2D(*[9, 3., 3., 4, 4, 1.])
+	data_t   = DT.Gauss_2D(*[30, 5., 5., 15, 15, 1.])
+	scipy.misc.imsave("hoggtest_scene_true.png", scene_t)
+	scipy.misc.imsave("hoggtest_kernel_true.png", kernel_t)
+	scipy.misc.imsave("hoggtest_data_true.png", data_t)
+	
+	## Data: convolve the scene with the kernel
+	data = scipy.signal.fftconvolve(scene_t, kernel_t, "same")
+	scipy.misc.imsave("hoggtest_data.png", data)
+	
+	## Kernel: data = scene * k --> kernel
+	kernel = DT.get_kernel(scene_t, data_t, [9,9], False)
+	scipy.misc.imsave("hoggtest_kernel.png",kernel)
+	
+	## Scene: data = scene * k --> scene
+	scene = DT.deconvolve_image(data_t, kernel_t, False)
+	scipy.misc.imsave("hoggtest_scene.png",scene)
+	
+	## Moments
+	print DT.moments(scene)
+	print DT.moments(kernel)
+	print DT.moments(data)
+	
+	print "Total",round(time.time()-t0,3)
+	
+	return
+\end{verbatim}
+\newpage
 
 
 
