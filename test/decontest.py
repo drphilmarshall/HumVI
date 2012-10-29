@@ -130,6 +130,7 @@ def dectest():
 	
 ##============================================================
 
+## Status: doesn't deconvolve -- just gives input
 
 def imdectest():
 	
@@ -156,7 +157,45 @@ def imdectest():
 	print "Total",round(time.time()-t0,3)
 	
 	return	
+
+	
+##============================================================	
+def hoggtest():
+		
+	t0 = time.time()
+	
+	## Define true scene, kernel, and data
+		## Arguments are image size, width of Gaussian (x,y), centre (x,y), total flux
+	scene_t  = DT.Gauss_2D(*[30, 4., 4., 15, 15, 1.])
+	kernel_t = DT.Gauss_2D(*[9, 3., 3., 4, 4, 1.])
+	data_t   = DT.Gauss_2D(*[30, 5., 5., 15, 15, 1.])
+	scipy.misc.imsave("hoggtest_scene_true.png", scene_t)
+	scipy.misc.imsave("hoggtest_kernel_true.png", kernel_t)
+	scipy.misc.imsave("hoggtest_data_true.png", data_t)
+	
+	## Data: convolve the scene with the kernel
+	data = scipy.signal.fftconvolve(scene_t, kernel_t, "same")
+	scipy.misc.imsave("hoggtest_data.png", data)
+	
+	## Kernel: data = scene * k --> kernel
+	kernel = DT.get_kernel(scene_t, data_t, [9,9], False)
+	scipy.misc.imsave("hoggtest_kernel.png",kernel)
+	
+	## Scene: data = scene * k --> scene
+	scene = DT.deconvolve_image(data_t, kernel_t, False)
+	scipy.misc.imsave("hoggtest_scene.png",scene)
+	
+	## Moments
+	print DT.moments(scene)
+	print DT.moments(kernel)
+	print DT.moments(data)
+	
+	print "Total",round(time.time()-t0,3)
+	
+	return	
+	
+	
 	
 ##============================================================
 if __name__=="__main__":
-	imdectest()
+	hoggtest()

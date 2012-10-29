@@ -621,7 +621,7 @@ def deconvolve_image(imagefile, kernel, vb=False):
 
 ##------------------------------------------------------------					
 	## Check: reverse procedure
-	check = True
+	check = False
 	if check is True:
 		resi = (numpy.dot(kernmat,refimgvec)-imgvec).reshape(imgarr.shape)
 		scipy.misc.imsave("check_resi.png", resi)
