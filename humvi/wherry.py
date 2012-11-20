@@ -15,7 +15,7 @@ vb needs to be a parameter
 import numpy
 import scipy
 import os
-from ImageMethods import png_pix, fits_pix
+from misc.ImageMethods import png_pix, fits_pix
 from sys import argv
 try:
 	import io_pjm
@@ -25,7 +25,7 @@ except ImportError:
 ##============================================================
 
 ## Global variables
-from common import cutoff
+from misc.common import cutoff
 
 ##============================================================
 
