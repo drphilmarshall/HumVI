@@ -141,7 +141,7 @@ control inspection of the outputs of various automated detection algorithms.
 For an image to enable discovery, it needs to be {\it informative}: that is,
 it must have high quality, so that interesting features are visible to the
 viewer, and it must not be confusing, so that interesting features are not
-mistaken for artifacts and ignored. The quality of an astronomical image is
+mistaken for artefacts and ignored. The quality of an astronomical image is
 only partly determined by the observing conditions, telescope, and camera: the
 image processing carried out in software is also important. We have additional
 information about the image that we can use to improve both its resolution and
@@ -153,13 +153,13 @@ literature on this image restoration process in astronomy \citep[e.g.][]{Ric72, 
 expect algorithms like this to be important for synoptic surveys, whose
 resolution and depth varies from image to image, and from filter to filter in
 a partiular field of view. Combining raw images into a color composite will
-produce colored artifacts due to the mis-matched resolution in the red, green
+produce colored artefacts due to the mis-matched resolution in the red, green
 and blue channels; while the resulting composite will have different (mean)
 resolution than other elsewhere on the sky, leading to an inhomogeneity that
 will hinder the development of the viewers' internal feature model as they
 have to allow for the variations in image quality. However, deconvolution is
-notorious for producing image artifacts if not sufficiently regularized
-\citep[see, for example, comments at the end of section~1 of][]{MCS98}: such artifacts could
+notorious for producing image artefacts if not sufficiently regularized
+\citep[see, for example, comments at the end of section~1 of][]{MCS98}: such artefacts could
 create more problems than the deconvolution solves, reducing the probability
 of a discovery being made.  An experimental test of the sensitivity with which
 an image set enables discovery is required.
@@ -176,7 +176,7 @@ ask the following questions:
 \begin{itemize}
 
 	\item Does simple, ``light'' deconvolution designed for making
-resolution-matched composite images introduce significant colored artifacts?
+resolution-matched composite images introduce significant colored artefacts?
 
 	\item What target PSF-width should be used in order to
 maximise discovery sensitivity in the color composite images? How does this
@@ -630,7 +630,7 @@ That still isn't the end of the story, as equation~\ref{eqn:simple_deconvolve} h
 \begin{enumerate}
 	\item In using our recorded image to recover a ``better'' one (which bears more resmblance to the scene), we have ignored the existence of \emph{noise} in the data. This problem will be addressed in section~\vref{sec:pixvar}.
 	
-	\item The procedure outlined in this section may not be well-determined, so the solution may be flexible. Typically, this will introduce artifacts into the image, which, given the goals outlined in the introduction, would be highly unwelcome.\newline The reference image we have obtained at this point must be ``regularised'', or smoothed according to some well-motivated principles. One can find a good discussion of these principles in \citet{MCS98}: this paper is outlined in appendix~\ref{sec:MCS98notes}. Some comments on their mathematical procedure can be found in appendix~\ref{sec:MCS98procedure}. \newline Though it would be entirely possible to implement this for the current project (indeed, we have already generated much of the necessary data), it may well be overkill. Instead, a more modest regularisation scheme is proposed in section~\ref{sec:regularisation}.
+	\item The procedure outlined in this section may not be well-determined, so the solution may be flexible. Typically, this will introduce artefacts into the image, which, given the goals outlined in the introduction, would be highly unwelcome.\newline The reference image we have obtained at this point must be ``regularised'', or smoothed according to some well-motivated principles. One can find a good discussion of these principles in \citet{MCS98}: this paper is outlined in appendix~\ref{sec:MCS98notes}. Some comments on their mathematical procedure can be found in appendix~\ref{sec:MCS98procedure}. \newline Though it would be entirely possible to implement this for the current project (indeed, we have already generated much of the necessary data), it may well be overkill. Instead, a more modest regularisation scheme is proposed in section~\ref{sec:regularisation}.
 \end{enumerate}
 
 
@@ -792,6 +792,7 @@ Figure~\ref{fig:linear_stretch} shows the results of the procedure performed on 
 
 
 \subsubsection{Noise Properties Post-Deconvolution}
+\label{sec:deconvolution_noise}
 
 We use stretches to make images more readily interpretable, and we will perform such procedures on original and deconvolved images alike. Since the overarching framework of this project is about pattern recognition, it is necessary to analyse the effects of such manipulations on the noise properties of the image. Below we show stretches of increasing severity on an original image and its deconvolved counterpart.
 
@@ -874,11 +875,13 @@ Here are the general steps in the code for a run of the wherry procedure.
 %% UMBRELLA
 %%=================================================
 \section{Combined Deconvolution and Colour}
-\ref{sec:combine}
+\label{sec:combine}
 
-\MORE
+One of the first questions we asked was how to combine images of different qualities and still make the most of the information in each one; how do we prevent the low-quality images from poisoning the combination? For instance, say we have i-, r-, and g-band images of a galaxy, but by chance atmospheric fluctuations the r-band is very blurred. If we simply add the images together pixel by pixel, we'll end up in a situation like figure~\ref{fig:fuzz}, where the colours were distorted. Since colour is an important astronomical diagnostic, if this happens we'd be in trouble.
 
-One of the first questions we asked was how to combine images of different qualities and still make the most of the information in each one; how do we prevent the low-quality images from poisoning the combination? For instance, say we have i-, r-, and g-band images of a galaxy, but by chance atmospheric fluctuations the r-band is very blurred. If we simply add the images together pixel by pixel, we'll end up in a situation like figure~\ref{fig:fuzz} -- distortions  We have the tools now to have a go at solving  According to the literature (see for example \citet{MCS98}),  -- must deconvolve all bands to target PSF before combining.
+We now have the tools to begin solving this problem. Clearly we want to homogenise the blurriness of each of our R, G and B channels; that is make sure they have the same PSF. With these deconvolved raw imagess in hand, we can combine them \`a la section~\ref{sec:colour} to get a clean-looking result.
+
+\TODO{Examples? Don't have good data to do this? Can't deconvolve yet?}
 
 
 %%-------------------------------------------------
@@ -898,7 +901,24 @@ for arc visibility. We can also do image testing at Adler Planetarium on the wil
 %%-------------------------------------------------
 \subsection{Quality Metrics}
 
-
+But before troubling astonomers or members of the public with such requests, we should first try to rate the processed data with some objective measures of their quality. I haven't yet explored any of this to the extent of implementation, but here are a few ideas which might be a good starting point.
+\begin{itemize}
+	\item There will always be error in the minimisation step when we're solving the equation $\mathbf A \vec x = \vec b$. We can calculate the residual $\chi = \mathbf A \vec x - \vec b$, which will tell us how well our scene matches up with the data after convolution with the PSF kernel. The metric $\chi^2$ will provide an unambiguous indication of the ``goodness-of-fit'' of our model to the data.
+	\begin{itemize}
+		\item We take this further, by devising a protocol for splitting the image up into ``meaningful'' regions and comparing the $\chi^2$ values in each one.
+	\end{itemize}
+	
+	\item As mentioned in section~\ref{sec:deconvolution_noise}, we're also interested in determining the noise properties (e.g. distribution, level and spectrum) of the image; and whether this chances as we modify our deconvolution parameters or procedure. As mentioned in section~\ref{sec:covariance_matrix}, distinguishing noise from features of the scene can be a tricky thing to accomplish. There are some prescriptions in the literature (e.g. \citet{L+M08, Moi07}), but not all of them are applicable to this field. More investigation is needed.
+	
+	\item We also want to keep track of image-processing artefacts, as these can masquarade as astronomical features. The archetypal artefact is ringing, where band-limited images pick up oscillations in the spatial domain. Again, this is an issue of wide concern, so there are many existing procedures for identification of ringing. All we have to do is pick one that we like and implement it. From some cursory research, I like the approach of \citet{BMR10}; but there may well be better methods out there.
+	\begin{itemize}
+		\item I had an idea to turn the images into vector fields and calculate their curls and divergences, with the vague assumption that high-curl means more ringing. Of course, this is a highly-flawed approach because there are many good features which may produce high curl; but perhaps there's something in it.
+	\end{itemize}
+	
+	\item For our application, the distinctness of complex features is paramount. Some way of quantifying whether RGB image A of a galaxy has more fine detail then image B would be good.
+	
+	\item We get a lot of information from the colour differences between sources. Quantifying how the colour changes as we change the RGB scales may enable us to find some optimum scales which are slightly different from the automatically-calculated ones.
+\end{itemize}
 
 
 \newpage
@@ -917,8 +937,6 @@ This is just a scrappy section of small things I need to do.
 
 \underline{Colour}
 \begin{itemize}
-	\item Make some side-by-side composites showing Wherry and Lupton
-	\item Fail to compute scales $\rightarrow$ error
 	\item Should work with one or two FITS images.
 \end{itemize}
 
@@ -1249,7 +1267,7 @@ However, it would be na\"ive to simply place our trust in SciPy -- their convolu
 		\includegraphics[width=\textwidth]{../../Data/Deconvolved/gsc_CFHTLS_03_g_sci_rescaled_RES.png}
 		\caption{Residuals.}
 	\end{subfigure}
-	\caption{Deconvolution procedure -- a comparison of my home-made convolution algorithm and SciPy's optimised one. SciPy takes about 1/15 of the time. Note that a 3x3 kernel was used for this test, and there are obvious artifacts introduced around bright points of the image.}
+	\caption{Deconvolution procedure -- a comparison of my home-made convolution algorithm and SciPy's optimised one. SciPy takes about 1/15 of the time. Note that a 3x3 kernel was used for this test, and there are obvious artefacts introduced around bright points of the image.}
 	\label{fig:deconvolution_comparison}
 \end{figure}
 
