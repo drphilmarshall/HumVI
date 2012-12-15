@@ -32,9 +32,12 @@
 
 %%--------------------------------------------------
 %% Maths macros
-\def\HST{HST\xspace}
 \def\psfobs{\ensuremath{{\rm PSF_{obs}}}\xspace}
 \def\psfref{\ensuremath{{\rm PSF_{ref}}}\xspace}
+
+\def\HST{HST\xspace}
+\def\sextractor{SExtractor\xspace}
+\def\psfex{PSFEx\xspace}
 %%--------------------------------------------------
 %% Language macros
 \def\etc{{\&c.}\xspace}
@@ -51,7 +54,7 @@
 
 %% Top matter
 \title{Discovery Sensitivity in Human Viewable Images}
-\author{Cato Sandford\thanks{Department of Physics, New York University, USA; \texttt{cato@nyu.edu}}, Phil Marshall, David Hogg}
+\author{Cato Sandford\thanks{Department of Physics, New York University, USA; \texttt{cato@nyu.edu}}\\ \small with Phil Marshall and David Hogg}
 \date{\today}
 
 %%-------------------------------------------------
@@ -63,7 +66,7 @@
 
 
 \begin{abstract}
-A sketch of my project with DWH and PJM: image deconvolution and colour-composition.
+There is much scope in the future for ``crowd-sourcing'' the analysis of astronomical images. But the images will have to be presented in an intuitive and clear way so that non-experts have a shot at making an informed and useful contribution. In a summer project guided by David Hogg and Phil Marshall, I attempted to satisfy this need by devising a pipeline for the production of deconvolved RGB images from photometric telescope data.
 \end{abstract}
 
 
@@ -188,7 +191,7 @@ justified?
 
 \end{itemize}
 
-While we focus on lensed features as our discovery targets, and the XXX
+While we will focus on lensed features as our discovery targets, and the CFHT legacy
 survey, we hope that our results will be of interest to the astronomical
 community in general, and in particular to anyone who wants to see what they
 have found in the object catalog database of a large synoptic imaging survey.
@@ -199,20 +202,53 @@ In the following two subsections, we discuss the origins of blurriness in telesc
 \subsection{The Point-Spread Function (PSF)}
 \label{sec:psf}
 
-\begin{itemize}
-	\item What is it?
-	\item Whence?
-	\item Different in every image, sometimes varies within image	
-	\item How to identify
-\end{itemize}
+An image of the sky taken with a telescope will never perfectly capture the information in the afferent light. One of the main problems is blurring -- precise points in the sky become fuzzy, extended objects when measured with any conceivable apparatus. This happens for two reasons: (i) the finite size of camera apertures or telescope mirrors spells trouble for geometrical optics; the resulting diffraction blurs the image formed at the detector. (ii) light wavefronts passing through the atmosphere to the surface of the Earth are inevitably distorted by density fluctuations, which affect the refractive index of the air. This is particularly tricky to correct for because the atmosphere changes in unpredictable ways, on short spatial and temporal scales. The problem can be circumvented to some extent -- a space telescope avoids corrupting its data with influence from the messy atmosphere. But putting a telescope in space is expensive and compromises the flexibility of the mission's science goals. Most of the time there is no alternative but to build a ground-based telescope and try to correct the blurriness.
+
+We can talk about ``blurriness'' in a more quantitive way. An astronomical scene will typically feature a number of point sources (stars) which are bright but should be too small and distant to resolve into more than one pixel. How these point sources map to fuzzy blobs in our recorded image is known as the ``point spread function'' (hereafter PSF). As noted above, the PSF for a given image will have some contribution from the recording apparatus, and a more complicated time- and space-dependent contribution from the atmosphere.
+
+So each pixel of the scene is replaced by a suitably weighted image of the PSF in the observed image: mathematically, this procedure is a convolution (see figure~\ref{fig:fuzz}).
+In order to make precise inferences about the configuration or properties of astronomical objects, it is of utmost importance to find the PSF for a given image (or part of an image) and try to subtract it out as much as possible (``de-convolve'' in the astronomy jargon). A framework for estimating the PSF is given in section~\ref{sec:sextractor}, and the de-convolution process is described in the sections following.
+
+\begin{figure}
+	\centering
+	\includegraphics[width=0.3\linewidth]{./Images/space2g}
+	\includegraphics[width=0.3\linewidth]{./Images/space2conv}	
+	\caption{The effect of the PSF: blurring and loss of distinctness.}
+	\label{fig:fuzz}
+\end{figure}
+
 
 \subsection{Bandpasses and Colour Images}
 \label{sec:bands}
 
-\begin{itemize}
-	\item Photometric applications -- cheaper than spectroscopy (don't throw away photons) but yields information
-	\item Build a full picture by co-adding. But from section~\ref{sec:psf} we know this can be problematic.
-\end{itemize}
+As mentioned above, astronomical images are often filtered so that only a predetermined broad set of wavelengths will reach the detector. We then make multiple images of the same objects with different filters in place. This may seem strange: each filter throws away photons, making the resulting image less intense than an unfiltered counterpart. When we're trying to detect faint objects, this is not a good strategy. Furthermore, instead of taking just one picture of an object, we're now taking three or more (depending on the number of filters) -- this constitutes a considerable time burden on the telescope.
+
+However, for many applications in the optical or near-optical, the sources of interest have ample brightness for us to use the filters. And the information we gain from having wavelength-dependent flux measurements is well worth the extra time required. With the colour-domain data, we can make all sorts of inferences about the age, activity, distance, chemical composition and temperature of an astronomical source. And these ``photometric'' images are much cheaper to collect (in terms of time and photon counts) than spectra of each individual object.
+
+Once we have our three (say) images of the same patch of sky, with each representing a different colour, we may ask whether we can add them together recover a colour image as shown in figure~\ref{fig:coadd}. This seems reasonable, but in fact it can be very problematic. The three images have been made at different times; from section~\ref{sec:psf}, we know that they will have been corrupted by different PSFs; they may even have markedly different noise levels; indeed, atmospheric or device conditions may have resulted in spuriously different baseline intensities. As we can see from figure~\ref{fig:coadd_fuzz}, we have to do something cleverer than simply adding three such images to make a nice-looking colour composite. This will be discussed further in section~\ref{sec:colour}
+
+\begin{figure}
+	\centering
+	\includegraphics[width=0.3\linewidth]{./Images/RGB_Channel_red}
+	\includegraphics[width=0.3\linewidth]{./Images/RGB_Channel_green}
+	\includegraphics[width=0.3\linewidth]{./Images/RGB_Channel_blue}\\
+	\includegraphics[width=0.3\linewidth]{./Images/RGB_Channel_good_compos}
+	\caption{Starting with three greyscale images (our R, G and B channels), we can create a colour composite image.}
+	\label{fig:coadd}
+	\vspace{1cm}
+	\includegraphics[width=0.3\linewidth]{./Images/RGB_Channel_red}
+	\includegraphics[width=0.3\linewidth]{./Images/RGB_Channel_green_conv5_noised}
+	\includegraphics[width=0.3\linewidth]{./Images/RGB_Channel_blue}\\
+	\includegraphics[width=0.3\linewidth]{./Images/RGB_Channel_red_compos}
+	\caption{If the images to be combined are of differing quality (the green band now has more noise and larger PSF), adding them as we did before will result in an obviously distorted image. (Ignore the borders of the composite -- there is an image processing artefact there.)}
+	\label{fig:coadd_fuzz}
+\end{figure}
+
+
+\subsection{The Data}
+
+So the aim of the project is to start addressing these problems -- de-blurring images and combining them in such a way as to capitalise on their information content and emphasise faint features which may be of interest. I test my code on a sample of {\it irg} images from the CFHT Legacy Survey (CFHTLS). The hope is that the code will eventually be useful for large sets of images in the context described above.
+
 
 \newpage
 %%=================================================
@@ -242,7 +278,6 @@ Mathematically, we can think of \psfobs as being composed of the reference PSF c
 	\intertext{In the following sections, we discuss how we determine the observed PSF, construct the reference PSF, and find the convolution kernel $K$. Crucially for homogenising the image, we must also find the kernel $k$ which governs the inverse transformation, i.e.}
 	\psfobs(\vec x) \ast k(\vec x) = \psfref(\vec x).
 \end{align}
-\TODO{Update}
 
 %%=================================================
 %% SExtractor
@@ -250,23 +285,9 @@ Mathematically, we can think of \psfobs as being composed of the reference PSF c
 \subsection{Source Identification}
 \label{sec:sextractor}
 
+According to the list in section~\ref{sec:deconvolution}, the first step in deconvolving an image is to pinpoint and characterise all the sources in it. We do this using the \sextractor (``source-extractor'') software written by E. Beritn and hosted on the Astromatic website. \sextractor reads in a FITS image and catalogues all the astronomical sources it contains, for each one measuring useful parameters such as position, characteristics of shape and flux distributions. The identification of the distinct sources (``segmentation'') is based on a thresholding procedure, which compares regions of the image to the local background; this process is then repeated so that proximate objects can be deblended.\footnote{There is some discussion of replacing the threshold algorithm with wavelet decomposition in future editions of the software.} For more detail, see the user manual~\citep{sex96}, which can be downoaded from the Astromatic website~\url{astromatic.net}.
 
-
-
-\begin{itemize}
-	\item Use SExtractor to identify the sources in an image
-	\item How does it work?
-	\item What else does it measure / output?
-\end{itemize}
-
-\vspace{1cm}
-
-\begin{itemize}
-	\item SExtractor reads in a FITS image and catalogues all the astronomical sources it contains.
-	\item My code automates this by generating catalogues of an entire directory of images, using some special settings.
-	\item These default settings are (mostly) in the files \texttt{prepsfex.sex} (governs how the program runs) and \texttt{prepsex.param} (governs what information about the sources is recorded in the output file).
-	\item The program outputs a file with extension \texttt{.cat} (by default, if the image is called \texttt{image.fits}, the output will be \texttt{image.cat}). This contains information like the position, elongation and flux of the source.
-\end{itemize}
+All the user really has to do is to decide how the program should be set up, and select -- from an impressive list -- which quantities should be calculated. I store the default settings in the config files  \texttt{prepsfex.sex} and \texttt{prepsex.param} respectively. The output of the program is a file with extension \texttt{.cat} (by default, if the image is called \texttt{image.fits}, the output will be \texttt{image.cat}). This contains information like the position, elongation and flux of the source, which is to be used by the next piece of software to estimate the PSF in the image.
 
 %%=================================================
 %% PSFEx
@@ -274,19 +295,10 @@ Mathematically, we can think of \psfobs as being composed of the reference PSF c
 \subsection{Determining the PSF of an Image}
 \label{sec:psfex}
 
-\begin{itemize}
-	\item Use PSFEx to compute \psfobs (arbitrary shape, noisy)
-	\item How does it work? Use that graph in the docs.
-	\item What else does it measure / output?
-\end{itemize}
+Another piece of Astromatic software, \psfex, is used here. From the FITS image and the information in the \sextractor's \texttt{.cat} file, \psfex identifies which objects are actually blurred point sources, and uses their shape to determine the image PSF. The selection criteria for finding the point soures is that they lie in a particular region on a plot of pixel-width versus object intensity. Inside this region, we can confidently say the oject is a star, while inside, the object could be a galaxy or a cosmic ray or noise or anything. More detail is given in the \psfex manual \citep{psfex11} -- see in particular figure~3 and section~6.2.1.
 
-\vspace{1cm}
+Again, there are a considerable number of options for how this estimation is done and what form the outputs take. After flirting with some of the more sophisticated options, it turns out that the key thing for my purpose is an integrated image of the average PSF for the image. For now at least, we're considering small images where the variation of the PSF over the field is small. We may have to do something rather more clever if we have to work with larger pictures in the future.
 
-\begin{itemize}
-	\item PSFEx uses the \texttt{.cat} file from SExtractor, and estimates the PSF in the image.
-	\item There are a considerable number of options for how this estimation is done and what form the outputs take. After flirting with some of the more sophisticated options, it turns out that the key thing for my purpose is an integrated image of the average PSF for the image. This is saved as FITS.
-	\item I have automated the PSFEx step to process all the image catalogues in a directory with some default settings imposed (these are kept in \texttt{default.psfex}).
-\end{itemize}
 
 %%=================================================
 %% PSF Generation
@@ -295,18 +307,17 @@ Mathematically, we can think of \psfobs as being composed of the reference PSF c
 
 We are now equipped with an image which estimates the PSF of our data, \psfobs. We now have to make a decision about what our reference PSF should look like.
 
-In a (possibly misguided) bid to keep things simple, I prescribed ``PSF-tidying'' rather than a traditional light deconvolution. This means that \psfref has the same size as \psfobs, but a different shape -- specifically, a 2D Gaussian.
+In a (misguided) bid to keep things simple, I prescribed ``PSF-tidying'' rather than a traditional light deconvolution. This means that \psfref has the same size as \psfobs, but a different shape -- specifically, a 2D Gaussian. The procedure was:
 \begin{enumerate}
 	\item Find the centre and the two principal widths (variances) of the \psfobs image.
 	\item Use this information to make a 2D Gaussian with the same position and widths.
 	\item Save as a FITS file.
 \end{enumerate}
 
+Unfortunately, after many hours spent on making code compatible with this programme, a belated epiphany on the actual meaning of the Sampling Theorem meant that most of it had to be abandoned in favour of a much simpler procedure: viz., the target PSF should in all cases have a FWHM of two pixels.
 
-%%-------------------------------------------------------------------------------------------
-\subsubsection{Pseudocode}
+My mistake was in applying the Sampling Theorem to the resolution of the data rather than the resolution of the detector. In retrospect, it's fairly obvious that this is wrong: the sampling increment should be twice as fine as the smallest feature in a signal. For an astonomical image, the sampling increment is a pixel and the smallest feature is the PSF -- so we should arrange it such that the PSF has a width of about two pixels.
 
-\ldots
 
 %%=================================================
 %% Kernel
@@ -336,7 +347,7 @@ The target-PSF image matrix, $\mathbf B$ is less strightforward. We must think c
 
 \MORE
 
-$\mathbf B$ is then a matrix with ${\rm size}(a)$ rows and ${\rm size}(k)$ columns. The vector problem in equation~\ref{eqn:vector} is underdetermined, so we must use some optimisation procedure (typically least-squares minimisation) to find $\vec k$.
+$\mathbf B$ is then a matrix with ${\rm size}(a)$ rows and ${\rm size}(k)$ columns. The vector problem in equation~\ref{eqn:vector} is overdetermined (the kernel is smaller than \psfobs), so we must use some ``best fit'' procedure (typically least-squares minimisation) to find $\vec k$.
 
 %%-------------------------------------------------------------------------------------------
 \subsubsection{Pseudocode}
@@ -348,25 +359,21 @@ $\mathbf B$ is then a matrix with ${\rm size}(a)$ rows and ${\rm size}(k)$ colum
 	\item \#\# Turn these image arrays into linear algebra objects
 	\item psf\_obs = psf\_obs.flatten()
 	\item psf\_ref = stack(psf\_ref, dim=(psf\_obs.size, kernel.size))\
- 				\newline~\mbox{}~\hspace{1cm} stack() method constructs rectangular Toepliz matrix of dimensions dim
+ 		\newline~\mbox{}~\hspace{1cm}\#\# stack() constructs rectangular matrix of dimensions dim\
+ 		\newline~\mbox{}~\hspace{1cm}\#\# conformable for multiplication with the flattened kernel image.
 	\item kernel = solve(psf\_ref, psf\_obs)
 	\item kernel = reshape(kernel, kernel\_dim)
 	\item save\_image(kernel)
 	\item return kernel
 \end{enumerate}}
 
-
-In practice, we have some idea of what the kernel should look like: a bright central element\ldots We can use this prior guess to speed up the convergence of the algorithm \MORE needs pseudocode.
-
 %%-------------------------------------------------------------------------------------------
 \subsubsection{Interlude: Honesty Note}
 \label{sec:shave}
 
-\TODO{Cato: this might be confusing -- reverse A and B?}
+When we convolve two images, we produce a new image pixel by taking a weighted sum of the surrounding pixels. For instance, say we convolve a large image $\mathcal{B}$ with a 3$\times$3-pixel image to get $\mathcal{A}$. The first (i.e. top-left) pixel of $\mathcal{A}$ that we can properly determine is not the same as the first pixel of $\mathcal{B}$, because \MORE.
 
-When we convolve two images, we produce a new image pixel by taking a weighted sum of the surrounding pixels. For instance, say we convolve a large image $\mathcal{A}$ with a 3$\times$3-pixel image to get $\mathcal{B}$. The first (i.e. top-left) pixel of $\mathcal{B}$ that we can properly determine is not the same as the first pixel of $\mathcal{A}$, because \MORE.
-
-Thus, the honest thing to do is to throw away some information by making image $\mathcal B$ smaller than $\mathcal A$ -- in this example with a 3$\times$3 image, we shave off the four outer edges, so if $\mathcal A$ is $N\times M$, $\mathcal B$ is $(N-2)\times(M-2)$. A bigger convolving image would require more pixels to be lost from the result.
+Thus, the honest thing to do is to throw away some information by making image $\mathcal A$ smaller than $\mathcal B$ -- in this example with a 3$\times$3 image, we shave off the four outer edges, so if $\mathcal B$ is $N\times M$, $\mathcal A$ is $(N-2)\times(M-2)$. A bigger convolving image would require more pixels to be lost from the result.
 
 This contrasts with the traditional solution to the problem, which is to ``pad'' the original image with zeroes (see figure~\ref{fig:zeropad}) such that the final image is the same size as the (pre-padded) original was. This seems to introduce spurious information -- how can we possibly know that there are zeros at the border of an image? Often this is patently not the case, even for astronomical images which can be mostly black. With this in mind, it may seem preferable to adopt the ``lossy'' procedure outlined in the last paragraph.
 
@@ -396,19 +403,23 @@ The image vectors $\vec a$ and $\vec b$ have the same form as discussed earlier 
 
 Once we have constructed an appropriate kernel matrix, we solve (using \texttt{scipy.sparse.linalg}) the linear system to find the pixel vector $\vec b$ for the target image $\mathcal B$.
 
-But unfortunately that isn't the end of the story, as equation~\ref{eqn:simple_deconvolve} has some important shortcomings:
+\paragraph{Solving an overconstrained problem.} If we want to solve the matrix equation~\ref{eqn:simple_deconvolve} and get an unambiguous answer, we need the system to be \emph{overdetermined} -- i.e. the inferred scene image-vector $\vec b$ should have fewer elements than the data image-vector $\vec a$. This goes right against the arguments raised in section~\ref{sec:shave}, which considers information-transduction in the convolution procedure.
 
-\begin{enumerate}
-	\item In using our recorded image to recover a ``better'' one (which bears more resmblance to the scene), we have ignored the existence of \emph{noise} in the data. This problem will be addressed in section~\vref{sec:pixvar}.
-	
-	\item The procedure outlined in this section may be highly over-determined, and so there is a lot of flexibility in the solution. Typically, this will introduce artifacts into the image, which, given the goals outlined in the introduction, would be highly unwelcome.\newline The reference image we have obtained at this point must be ``regularised'', or smoothed according to some well-motivated principles. One can find a good discussion of these principles in \citet{MCS98}: this paper is outlined in appendix~\ref{sec:MCS98notes}. Some comments on their mathematical procedure can be found in appendix~\ref{sec:MCS98procedure}. \newline Though it would be entirely possible to implement this for the current project (indeed, we have already generated much of the necessary data), it may well be overkill. Instead, a more modest regularisation scheme is proposed in section~\ref{sec:regularisation}.
-\end{enumerate}
+How to resolve the conflict? Notice that in violating the section~\ref{sec:shave} mandate, we will introduce problems on the inferred image's boundaries\footnote{The problem will rach a full kernel-width into the recovered image, though the severity diminishes the further in you go.}. We can live with this -- especially if we are considering large images which have comparatively little information on the boundary. On the other hand, solving an underdetermined system is inherently unstable. So in order to arrive at a robust solution for $\vec b$, we should sacrifice our faithfullness to the convolution procedure.
 
+Now there are two possibilities: (i) ``pad'' the data image $\mathcal A$ with zeroes; this will allow us to maintain the size of the inferred image. (ii) Keep $\mathcal A$ the same and accept a smaller inferred image $\mathcal B$. (In both cases, the kernel matrix $\mathbf K$ is taller than it is wide.) The choice isn't particularly compelling -- in (i) we are introducing spurious information but this is confined to the edges; in (ii) we maintain the purity of our method, but may introduce problems later on when we try to compare the images. Uncharacteristically, I'll opt for (i), the simpler-but-corrupt choice.
+
+We should choose the padding so that the deconvolved image has the same size as the original data image. This means making a border of black pixels with total width ahnd height equal to the width and height of the kernel image. The changes to how we construct our kernel matrix are less trivial, and require careful thought and much picture-drawing (often it is hard to visualise how image manipulations translate into linear algebra operations). The kernel matrix corresponding to a 2D Gaussian kernel is shown in figure~\ref{fig:kernmat}.
+
+\FIG{Kernmat image}
+\label{fig:kernmat}
 
 
 %%-------------------------------------------------------------------------------------------
 \subsubsection{Pseudocode}
+\label{sec:decon_pseudocode}
 
+This should illustrate how the general structure of the deconvolution procedure.
 \texttt{\begin{enumerate}
 	\item img\_array = readin(imagefile)\newline~\mbox{}~\hspace{1cm}\#\# Or can be given as straight array
 	\item img\_vec = img\_array.flatten()
@@ -421,9 +432,10 @@ But unfortunately that isn't the end of the story, as equation~\ref{eqn:simple_d
 	\item save\_image(refimg)
 \end{enumerate}}
 
----------
+%%-------------------------------------------------------------------------------------------
+\subsubsection{Incorporating an Initial Condition}
 
-Consider for a moment point number~\ref{pnt:sparse_solve}. In practice, we can do better than this, since we have some prior information on what the deconvolved image should look like: viz. the original image. Using this guess could dramatically reduce the number of iterations required for convergence. This is how we do it.
+In practice, we can do better than this, since we have some prior information on what the deconvolved image should look like: viz. the original image. Using this guess could dramatically reduce the number of iterations required for convergence. This is how we do it.
 
 We wish to solve an equation of the form
 \begin{equation}
@@ -441,8 +453,7 @@ using least-squares or something similar. Then our final estimate for the soluti
 \begin{equation}
 	\vec{b} = \vec{b_0} + \vec{\Delta b}.
 \end{equation}
-
-This should be more accurate and less computationally intensive than doing it without the initial condition.\footnote{Details -- if the same stopping tolerances atol and btol are used for each system, the number of iterations for the two methods will be similar, but the final solution x0 + dx should be more accurate. The only way to reduce the total work is to use a larger stopping tolerance for the second system. If some value btol is suitable for A*x = b, the larger value btol*norm(b)/norm(r0) should be suitable for K*db = r0.}
+This should be more accurate and less computationally intensive than doing it without the initial condition.
 
 For our purposes, the initial guess will just be the observed image; or in the language used above, $\vec{b_0}=\vec{a}$. However, we can't simply plough ahead with this, because the original image and the target image will have different dimensions ($\mathbf A$ is not square). This is easily rectified by augmenting the original image vector $\vec a$ with zeroes and using this padded version as $\vec{b_0}$; thankfully there is no ``dishonesty'' here (see section~\ref{sec:shave}), since $\vec{b_0}$ is only a guess in the first place.
 
@@ -472,7 +483,7 @@ With all this in mind, it seems we modify our algorithm above:
 	\item save\_image(refimg)
 \end{enumerate}}
 
-
+Having said all this, it is unclear how much benefit we actually get from including our prior information. The least-squares algorithm is convex, and has been well-optimised so it is also very fast. Should test this, but it's not central to the project so maybe some other time.
 
 
 %%-------------------------------------------------------------------------------------------
@@ -518,28 +529,27 @@ Other than the results being wrong, here are some other things I've noticed:
 	\end{itemize}	
 \end{itemize}
 
----
 
-Once this works, I'll apply the same procedure to a larger image with several objects of size \psfobs; e.g. figure~\ref{fig:tiled}.
-\begin{figure}
-	\includegraphics[scale=1]{"../test/imdec_obig"}
-	\label{fig:tiled}
-	\caption{}
+
+\paragraph{Constructing the kernel matrix $\mathbf K$ from the kernel image.} Figure~\ref{fig:kernmat} shows an image of the kernel matrix, constructed from the image in figure~\ref{fig:decontest}, to be used in equation~\ref{eqn:simple_deconvolve} for inferring the reference image.
+\begin{figure}[h]
+	\centering
+	\includegraphics[width=3cm]{"../test/kernmat"}
+	\caption{Kernel matrix used in linear algebra.}
+	\label{fig:kernmat}
 \end{figure}
 
+The form of this matrix is governed by the inclusion of padded black-space in the observed image.
 
+\paragraph{Deconvolving a larger image.} Once this works, I'll apply the same procedure to a larger image with several objects of size \psfobs; e.g. figure~\ref{fig:tiled}.
+\begin{figure}
+	\centering
+	\includegraphics[scale=1]{"../test/imdec_obig"}
+	\caption{Bigger image to deconvolve}
+	\label{fig:tiled}
+\end{figure}
 
-\paragraph{Next} Hogg emphasised the following (26/10):
-
-\begin{itemize}
-	\item The data image should be bigger than the scene;
-\end{itemize}
-i.e. pad the data with zeros. This goes against the discussion of section~\ref{sec:shave}. The reason for it is that we want to solve an overdetermined system rather than underdetermined (I had previously assumed /tried to solve the underdetermined system and then regularise / choose one solution somehow). Since this only causes problems at the edges, the larger the image, the smaller the problem.
-
-\begin{itemize}
-	\item To speed things up, it may be possible to do the linalg-solve without computing the kernel matrix and performing numerous matrix products.
-\end{itemize}
-The syntax is something like \texttt{solve(function, b)}, where \texttt{function} would be the operation I use to get the kernel matrix. Investigate this.
+\paragraph{Speeding it up.} It may be possible to do the linalg-solve without computing the kernel matrix and performing numerous matrix products. The syntax is something like \texttt{solve(function, b)}, where \texttt{function} would be the operation I use to get the kernel matrix. Investigate this.
 
 
 \subsubsection{hoggtest}
@@ -567,8 +577,13 @@ The results are in figure~\vref{fig:hoggtest}. Simple code is on page~\pageref{c
  	\label{fig:hoggtest}
 \end{figure}
 
+Note the obvious problem (identified earlier) that the kernel looks funny: clearly not a Gaussian. This is strange, because the kernel calculation is a highly over-constrained linear algebra problem, so there should be no ambiguity from that end.
 
-\newpage
+It turns out that for a size of 9x9 pixels, the kernel image looks pretty plausible. This, along with a number of other simple tests, lead me to believe that the code was working properly. But if we select a larger kernel size, say 15x15, the image looks like a mess and not at all what we expect.
+
+\FIG{kernel image 9x9, 15x15}
+
+
 \label{cde:hoggtest}\begin{verbatim}
 def hoggtest():
 		
@@ -604,7 +619,20 @@ def hoggtest():
 	
 	return
 \end{verbatim}
-\newpage
+
+
+
+%%-------------------------------------------------------------------------------------------
+\subsubsection{Shortcomings}
+
+That still isn't the end of the story, as equation~\ref{eqn:simple_deconvolve} has some important shortcomings:
+
+\begin{enumerate}
+	\item In using our recorded image to recover a ``better'' one (which bears more resmblance to the scene), we have ignored the existence of \emph{noise} in the data. This problem will be addressed in section~\vref{sec:pixvar}.
+	
+	\item The procedure outlined in this section may not be well-determined, so the solution may be flexible. Typically, this will introduce artifacts into the image, which, given the goals outlined in the introduction, would be highly unwelcome.\newline The reference image we have obtained at this point must be ``regularised'', or smoothed according to some well-motivated principles. One can find a good discussion of these principles in \citet{MCS98}: this paper is outlined in appendix~\ref{sec:MCS98notes}. Some comments on their mathematical procedure can be found in appendix~\ref{sec:MCS98procedure}. \newline Though it would be entirely possible to implement this for the current project (indeed, we have already generated much of the necessary data), it may well be overkill. Instead, a more modest regularisation scheme is proposed in section~\ref{sec:regularisation}.
+\end{enumerate}
+
 
 
 
@@ -644,7 +672,6 @@ Including this information in the solution amounts to modifying the expression f
 \begin{equation}\label{eqn:matrix_eqn_noise}
 	S_i = (\mathbf M \vec{y_i} - \vec b)^{\rm T}\mathbf{C}^{-1}(\mathbf M \vec{y_i} - \vec b).
 \end{equation}
-\TODO{Cato: read up on this.}
 
 A good trick for achieving this result without re-writing our minimisation code is to trivially modify equation~\ref{eqn:matrix_eqn}:
 \begin{equation}
@@ -657,13 +684,25 @@ It is easy to show, using the symmetry of $\mathbf{C}$, that using this matrix e
 %%-------------------------------------------------------------------------------------------
 \subsubsection{Pseudocode}
 
-\ldots
+We modify the procedure of section~\ref{sec:decon_pseudocode} to accomodate the covariance matrix (we only really modify part~\ref{pnt:sparse_solve}, but for completeness here is the whole thing):
 
-
+\texttt{\begin{enumerate}
+	\item img\_array = readin(imagefile)\newline~\mbox{}~\hspace{1cm}\#\# Or can be given as straight array
+	\item img\_vec = img\_array.flatten()
+	\item krn\_array = readin(kernelfile)	\newline~\mbox{}~\hspace{1cm}\#\# Or can be given as straight array
+	\item krn\_mat = sparse\_diag\_matrix(krn\_array.flatten(), offsets=[0,1,2,\ldots])\newline~\mbox{}~\hspace{1cm}\#\# general gist
+	\item Chalf = sqrt(inverse(covariance\_matrix( img\_array )))
+	\item refimg\_vec = sparse\_lsq\_solve(Chalf * krn\_mat, Chalf * img\_vec)\
+				\newline~\mbox{}~\hspace{1cm}\#\# System is underdetermined \ra iterative solution
+	\item refimg\_vec = stretch(refimg\_vec)\newline~\mbox{}~\hspace{1cm}\#\# For ease of viewing
+	\item refimg = reshape(refimg\_vec)\newline~\mbox{}~\hspace{1cm}\#\# Make into an image-worthy shape
+	\item save\_image(refimg)
+\end{enumerate}}
 
 
 %%=================================================
 \subsubsection{Noise Model}
+\label{sec:covariance_matrix}
 
 Having established that our minimisation functional, $S$, should include the data covariance matrix $\mathbf C$, we must now discuss how to calculate this matrix.
 
@@ -678,37 +717,39 @@ If we actually want to take the noise into consideration, the easiest thing to d
 	\mathbf C = \sigma^2\mathbb{I}.
 \end{equation}
 
-Increasing the sophisitcation of our model further, we could relax condition (ii) above and let different pixels have different noise levels\footnote{\TODO{Cato: what does ``heteroscedastic'' mean? Relevant?}}. This makes a lot of sense, since we'd expect brighter pixels to have higher noise. To get an idea of why this might be, consider photons from the sky arriving on a (perfect) telescope detector. This is a prototypical Poisson process, and in accordance with Poisson statistics, the mean count for a particular pixel will be equal to the variance in that pixel. In situations where there are many photons arriving at our detector (e.g. looking at bright optical sources), our Poisson distribution will become a Normal distribution; but the equality of mean and variance wil still hold. These considerations suggest the following covariance matrix:
+Increasing the sophisitcation of our model further, we could relax condition (ii) above and let different pixels have different noise levels\footnote{I believe one would describe this variable noise model as ``heteroscedastic''.}. This makes a lot of sense, since we'd expect brighter pixels to have higher noise. To get an idea of why this might be, consider photons from the sky arriving on a (perfect) telescope detector. This is a prototypical Poisson process, and in accordance with Poisson statistics, the mean count for a particular pixel will be equal to the variance in that pixel. In situations where there are many photons arriving at our detector (e.g. looking at bright optical sources), our Poisson distribution will become a Normal distribution; but the equality of mean and variance wil still hold. These considerations suggest the following covariance matrix:
 \begin{equation}\label{eqn:covmat}
 	\mathbf{C}_{jk} = \frac{n_j}{n}\sigma^2\delta_{jk},
 \end{equation}
 where $n_j$ is the number of counts in pixel $j$, $n$ is the total number of counts in the entire image. Note that this matrix is still diagonal, and the overall noise properties of the image are preserved.
 
-This is a pretty rudimentary model for the pixel uncertainty. A more methodical / unprejudiced procedure might be to use ``feasible generalised least squares''.
+This is a pretty rudimentary model for the pixel uncertainty. A more methodical / unprejudiced procedure might be to use ``feasible generalised least squares''. But that's the general gist.
 
-Now consider condition (i) above: is it possible that the noise in pixel $j$ is correlated with the noise in pixel $k$? The answer is yes, for two reasons. First, a well-resolved source will be spread over several pixels. These pixels will have similar (high) noise levels when compared to the background, so neighbouring pixels have corellated noise. The second reason comes from considering the limitations of the detector. Take for example a CCD grid: very bright sources may saturate pixels if the exposure time is long. Charge, or photon counts, will overflow into neighbouring pixels, coupling the inensity and the noise.
+Now consider condition (i) above: is it possible that the noise in pixel $j$ is correlated with the noise in pixel $k$? The answer is yes, for two reasons. First, a well-resolved source will be spread over several pixels. These pixels will have similar (high) noise levels when compared to the background, so neighbouring pixels have correlated noise. The second reason comes from considering the limitations of the detector. Take for example a CCD grid: very bright sources may saturate pixels if the exposure time is long. Charge, or photon counts, will overflow into neighbouring pixels, coupling the intensity and the noise.
 
 A covariance matrix which refelcts these considerations will have off-diagonal elements which appear in diagonal stripes directly either side of the main diagonal (representing sideways-neighbours of pixel $j$) and other diagonal stripes around $w$ elements from the main diagonal, where $w$ is the width of the image. A calculation of how these off-diagonal stripes are related to the diagonal value $j$ will depend to some extent on the intensity profile of the source which appears in $j$ and on the properties of the detector. 
 
 Still more advanced noise models will exist. But for our treatment, we will content ourselves with a covariance matrix of the form given in equation~\ref{eqn:covmat}.
 
 
-
 %%-------------------------------------------------------------------------------------------
 \subsubsection{Pseudocode}
 
-\ldots
-
+This pseudocode illustrates how we compute the covariance matrix in equation~\ref{eqn:covmat}.
+\texttt{\begin{enumerate}
+	\item img\_array = readin(img\_file).flatten()
+	\item flx\_tot = sum(img\_array)
+	\item flx\_var = variance(img\_array)
+	\item covmat = zero\_array( shape = [img\_array.size, img\_array.size] )
+	\item covmat[i,i] = img\_array[i] for i in img\_array.size
+	\item covmat *= ( flx\_var / flx\_tot )
+\end{enumerate}}
 
 
 %%-----------------------------------------------------------------------------------------
 \subsubsection{Precomputed Covariance Matrices}
 
-Note that inclusion of this covariance matrix has an additional advantage.
-\begin{itemize}
-	\item Weight information from other sources, e.g. telescope operator who knows about bum pixels, saturated pixels
-	\item Block out missing pixels so they aren't involved in inference.
-\end{itemize}
+The necessity for locally calculating covariance matrices as in section~\ref{sec:covariance_matrix} is sometimes avoided if the data come packaged with precomputed covariance matrix. Rather than inferring the image properties solely from the image itself, it is preferable to trust the knowledge of the people who produced the data, who are more familiar with the properties (and possible malfunctioning) of the instrument. In the case of faulty or missing pixels, they can also provide ``masking arrays'' which block out the relevant pixels so they aren't involved in any inference downstream.
 
 
 %%=================================================
@@ -717,126 +758,147 @@ Note that inclusion of this covariance matrix has an additional advantage.
 \subsection{Regularisation}
 \label{sec:regularisation}
 
+After deconvolution, there will sometimes be image artefacts, or ambiguity as to the ``best'' solution (e.g. in the case of an underdetermined problem). We can reduce these using a regularisation technique, which typically involves minimising a cost function associated with the distirbution of intensity in the image. Choosing the cost function will be to some extent a matter of preference, since it encodes many of our assumptions about what the image ought to look like.
 
-Occam's razor
-
-\FIG{Before smoothing, after smoothing}
+\citet{MCS98} propose an effective regularisation scheme (see appendix~\ref{sec:MCS98notes}), but, as noted above, what they do may be overkill for our purposes. As of writing, this project hadn't reached the stage of incorporating a robust regularisation scheme; so this section is really a placeholder for further work.
 
 %%=================================================
 %% Image Manipulation
 %%=================================================
-\subsection{Image Manipulations}
+\subsection{Image Stretch}
 
-\begin{itemize}
-	\item Making them viewable by humans -- stretch. \FIG{Before after stretch}
-	\item .psf file conversion
-	\item FITS conversion
-\end{itemize}
+A final comment about image viewability. The CFHTLS images with which we've been working have low photon counts, and the brightest sources often dominate to such an extent that other sources are invisible. To amend this, we've been applying a ``stretch'' to the image -- a re-scaling of intensities such that faint objects are made brighter without saturating bright pixels. Much of the work that went into the next section was concerned with how best to do this, but for now we just use a simple linear stretch:
+\texttt{\begin{enumerate}
+	\item a = median(img)
+	\item b = precentile(0.975, img)
+	\item sigma = 0.5*(b-a)
+	\item scale\_min = a-5.0*sigma
+	\item scale\_max = a+10.0*sigma
+	\item img = (img-scale\_min)/(scale\_max-scale\_min)
+	\item img.clip(scale\_max-scale\_min)
+	\item save(img)
+\end{enumerate}}
+Figure~\ref{fig:linear_stretch} shows the results of the procedure performed on two images. Notice that the stretch also brightens the sky-level, and enhances noise.
+
+\begin{figure}[h]
+	\centering
+	\includegraphics[width=0.3\linewidth]{../../Data/CFHTLS_03/CFHTLS_03_g_sci/CFHTLS_03_g_sci.png}	
+	\includegraphics[width=0.3\linewidth]{../../Data/CFHTLS_03/CFHTLS_03_g_sci/Enhanced_Original/CFHTLS_03_g_sci_rescaled.png}\\\vspace{1mm}	
+	\includegraphics[width=0.3\linewidth]{../../Data/CFHTLS_12/CFHTLS_12_i_sci/CFHTLS_12_i_sci.png}	
+	\includegraphics[width=0.3\linewidth]{../../Data/CFHTLS_12/CFHTLS_12_i_sci/Enhanced_Original/CFHTLS_12_i_sci_rescaled.png}
+	\caption{The effects of a simple linear stretch on the images CFHTLS\_03\_g.fits and CFHTLS\_12\_i.fits. Left is the raw data; the stretched version is on the right.}
+	\label{fig:linear_stretch}
+\end{figure}
 
 
-%%=================================================
-%% Test Noise Properties
-%%=================================================
-\subsubsection{Stretch: Noise Properties}
+\subsubsection{Noise Properties Post-Deconvolution}
 
-Here I've applied a few different stretches to the original image and to the deconvolved image. The left-hand side images are all stretched originals and the right-hand side are all stretched deconvolutions. The stertch gets more severe as you go down.
+We use stretches to make images more readily interpretable, and we will perform such procedures on original and deconvolved images alike. Since the overarching framework of this project is about pattern recognition, it is necessary to analyse the effects of such manipulations on the noise properties of the image. Below we show stretches of increasing severity on an original image and its deconvolved counterpart.
 
-
-Specific notes:\\
-* I used a 9x9 kernel for these images.\\
-* To change the strength of the stretch, I simply divided the upper bound (you called it "vmax") by 2 and 10.\\
+\FIG{re-do these stretches on deconvolved/originals. To change the strength of the stretch, I simply divided the upper bound (you called it "vmax") by 2 and 10.}
 
 \includepdf[pages={1,2}]{../../Data/Deconvolved/CFHTLS_03_g_Deconvolved_noisecompare.pdf}
 
 
+
+
 \newpage
 %%=================================================
-%% RBG
+%% RGB
 %%=================================================
 \section{Bandpass Composition}
 \label{sec:colour}
 
-Telescope data is often given in ``bands'' -- we do not record the total flux coming from a point in the sky, but the flux in a certain wavelength range. This information allows us to investigate the properties of astronomical objects, such as temperature and chemical composition. However to make a readily-interprable image which contains maximum information in one hit, we need to combine the bands to make a colour-composite image.
+Telescope data is often given in ``bands'' -- we do not record the total flux coming from a point in the sky, but the flux in a certain wavelength range. This information allows us to investigate the properties of astronomical objects, such as temperature and chemical composition. However to make a readily-interprable image which contains maximum information in one hit, we need to combine the bands to make a colour-composite image. In all that follows, I use the mapping R=i, G=r, B=g.
 
 Many methods had been developed to do this in accordance with researchers' individual aesthetic preference. But the full richness of possibility was still unexploited, until \citet{Lup++04} demonstrated just how much detail one could extract from data when colour was given its deserved treatment (see appendix~\ref{sec:Lup++04notes} for more detail). Using their method, we can combine images from different bands in a way which enhances hidden or faint features without allowing bright objects to dominate. It has the further advantage that the brightness of an object in the image is decoupled from its colour. The method is implemented in PJM's \emph{HumVI} (formerly \emph{ColorJPG}).
 
 A further improvement to the method was implemented by Wherry. Whereas Lupton's algorithm is appropriate for tweaking the look of a single image to bring out interesting features, Wherry lets us standardise this manipulation across many images so their properties are comparable. We translated Wherry's improvements from IDL to Python, and integrated this module with the HumVI code. Some additional improvements are also made, such as increased versatility with rebinning.
 
-A summary of this part of the project (with pseudocode) follows.
+%%-------------------------------------------------
+\subsection{Comparison of Composition / Stretch Procedures}
 
+The difference between the two procedures mentioned above (we'll call them ``lupton'' and ``wherry'') is subtle: the algorithms appear to be almost identical in how they combine and stretch the three input images. And though the methods appear to require different input parameters for the nonlinear stretch and colour scalings, this is deceptive.
+
+Whereas lupton uses two explicit parameters, $Q$ and $\alpha$, to stretch an image ($\alpha$ is supposed to set the low-intensity scaling and $Q$ controls the saturation behaviour), wherry only takes one user-selected parameter to achieve this. However, this apparent distinction is spurious because the lupton parameters always appear together in the code as the product $\alpha Q$.
+
+The other input is the list of three scalings, or weights, to be applied to the R, G and B channels of the image. Both methods give us control over these scalings -- a fact most important for our purpose, because we want to compare many composites against each other: a pixel of certain colour and intesnity in our final image should be representing the same raw data, regardless of the rest of the image.
+
+The code for the lupton procedure (originally written by Patrik Jonsson) appears to be more versatile with the treatment of these scales. Default behaviour is for the code to choose the best scales for the image, by ensuring some threshold proportion of pixels which are saturated in each band. Or we can demand that the scale is the same for all three channels, so that the overall colour is preserved. Or we can select the scales manually and feed them into the program. This last behviour is the default (and only) for the current wherry implementation. It seems to me that this degree control is desirable, but we should defer conclusion until we see enough images: how much work is it for the user to select their own scales, and does the automatic selection of the lupton code produce ``natural''-looking images whose features are clear?
+
+The most obvious distinction between the methods (rather than the implementation) is the inclusion in wherry of additional options on how to tweak the image: for example rebinning and modifying saturation levels. Beyond that, I can't tell. Maybe there's something subtle happening too.
+
+\begin{figure}[h]
+	\centering
+	\includegraphics[width=0.4\linewidth]{{../examples/composed_lupton_10,0.04_Auto}.png}
+	\includegraphics[width=0.4\linewidth]{{../examples/composed_10,0.04_Auto}.png}
+	\caption{Comparing the results of combining the i, r and g bands of CFHTLS\_27\_sci using lupton (left) and wherry (right). The same nonlinearity parameters and colour scalings were used for both images.}
+	\label{fig:lupton_wherry}
+\end{figure}
+
+Figure~\ref{fig:lupton_wherry}, we see that as expected the methods produce very similar results in terms of colouration and and intensity. However, the wherry image clearly has much higher noise levels, which sensibly degrade the image quality.
+
+%%-------------------------------------------------
+\subsection{Pseudocode for ``wherry'' Composition}
+
+Here are the general steps in the code for a run of the wherry procedure.
+
+\texttt{
 \begin{enumerate}
-	\item Translated (and improved?) the Wherry algorithm from IDL to Python (\texttt{wherry.py}). This is what it does:
-	\texttt{
-	\begin{enumerate}
-		\item RGB = [readin(R\_data),readin(G\_data),readin(B\_data)]		\#\# *\_data can be filename, array of data, or a channel instance
-		\item rescale(RGB, scalefactors)	\#\# multiply each band by a given number
-		\item rebin(RGB, xrebinfactor,yrebinfactor)		\#\# re-sample images
-		\item kill\_noise(RGB, cutoff)	\#\# sets all pixels below a threshold to 0
-		\item arsinh\_stretch(RGB, nonlinearity)
-		\begin{itemize}
-			\item pixtot = R\_array+G\_array+B\_array	\#\# collapse images onto each other
-			\item if pixtot[i,j]==0: pixtot[i,j]=1
-			\item factor = arsinh(nonlin*rad)/(nonlin*rad)
-			\item (R\_array,G\_array,B\_array) *= factor
-		\end{itemize}
-		\item if stauratetowhite==False: box\_scale(RGB)
-		\begin{itemize}
-			\item maxpixel[i,j] = max(R[i,j],G[i,j],B[i,j])	\#\# i.e. find the maximum pixel value of the three arrays
-			\item if maxpixel[i,j] < 1: maxpixel[i,j]=1
-			\item (R\_array,G\_array,B\_array) /= maxpixel
-			\item (Also translates origin of image if required)
-		\end{itemize}
-		\item overlay/underlay \#\# not entirely sure what these are for
-		\item scipy.misc.imsave(RGB)
-	\end{enumerate}
-	}
+	\item RGB = [readin(R\_data),readin(G\_data),readin(B\_data)]		\#\# *\_data can be filename, array of data, or a channel instance
+	\item rescale(RGB, scalefactors)	\#\# multiply each band by a given number
+	\item rebin(RGB, xrebinfactor,yrebinfactor)		\#\# re-sample images
+	\item kill\_noise(RGB, cutoff)	\#\# sets all pixels below a threshold to 0
+	\item arsinh\_stretch(RGB, nonlin)
 	\begin{itemize}
-		\item Note: when treating \texttt{wherry.py} as a standalone code for making composite images, the user can choose which bands to use for R, G and B.
-		\item Also, in the IDL version of the code, there is a function devoted to transforming the image data into bytes. When I was translating to Python, I found that this was an unnecessary IDL-specific step, and it was unnecessary to implement it.
+		\item pixtot = R\_array+G\_array+B\_array	\#\# collapse images onto each other
+		\item if pixtot[i,j]==0: pixtot[i,j]=1
+		\item factor = arsinh(nonlin*pixtot)/(nonlin*pixtot)
+		\item (R\_array,G\_array,B\_array) *= factor
 	\end{itemize}
-	\item Integrated with PJM's HumVI code, so that choice of Lupton/Wherry procedure is an option.
+	\item if stauratetowhite is False: box\_scale(RGB)
 	\begin{itemize}
-		\item Wherry is default. Luption can be invoked with command-line keyword \texttt{--lupton} or simply \texttt{-l}.
-		\item Again, the user can choose which bands to use for R, G and B -- it just depends on the order of the three filenames.
-		\begin{itemize}
-			\item After some initial misunderstanding, I now use R=i, G=r, B=g.
-		\end{itemize}
-		\item Of course, this bands$\rightarrow$colour map is unchanged when when \texttt{--lupton} is specified.
+		\item maxpixel[i,j] = max(R[i,j],G[i,j],B[i,j])	\#\# i.e. find the maximum pixel value of the three arrays
+		\item if maxpixel[i,j] < 1: maxpixel[i,j]=1
+		\item (R\_array,G\_array,B\_array) /= maxpixel
+		\item (Also translates origin of image if required)
 	\end{itemize}
-\end{enumerate}
+	\item overlay/underlay \#\# not entirely sure what these are for
+	\item scipy.misc.imsave(RGB)
+\end{enumerate}}
 
-%\begin{figure}
-%  \centering
-%    %\includegraphics[width=\linewidth]{C:/Users/adam.BEYOND/Dropbox/Hogg_2012/Code/HumVI/images/test/CFHTLS_03_lw.pdf}
-%  \caption{Restretched images and combination of three bands using two different procedures. \MORE specifics of algorithm / equation / pseudocode. \MORE crop.}
-%\end{figure}
+
+
+\newpage
+%%=================================================
+%% UMBRELLA
+%%=================================================
+\section{Combined Deconvolution and Colour}
+\ref{sec:combine}
+
+\MORE
+
+One of the first questions we asked was how to combine images of different qualities and still make the most of the information in each one; how do we prevent the low-quality images from poisoning the combination? For instance, say we have i-, r-, and g-band images of a galaxy, but by chance atmospheric fluctuations the r-band is very blurred. If we simply add the images together pixel by pixel, we'll end up in a situation like figure~\ref{fig:fuzz} -- distortions  We have the tools now to have a go at solving  According to the literature (see for example \citet{MCS98}),  -- must deconvolve all bands to target PSF before combining.
 
 
 %%-------------------------------------------------
-\subsection{Finding Optimal Parameters for the Image Manipulation}
+\subsection{Finding Optimal Parameters for Image Manipulation}
 
-`Anupreeta More has made a very nice set of test CFHTLS images for the
+Recall that the overarching goal into which this project fits is to make certain features in astronomical imaged readily apprent to human veiwers. At some point, the free parameters of our procedure must be decided, in line with this aim; the best way to achieve this is to test the results of different stretches, scales and deconvolution properties on subjects who can rate the images on their clarity and the distinctness of fine structure.
+
+PJM has this to say on the subject: `Anupreeta More has made a very nice set of test CFHTLS images for the
 Lens Zoo, and I discussed with her a bit your work: she thinks we
 should do a blind taste test at some point, showing the lens zoo dev
 team her images that have been a) displayed in standard form with
 HumVI and b) deconvolved and then
 displayed in standard form with HumVI, and ask for them to be graded
-for arc visibility. Probably we would want to supply a few different
-standard forms as well (and by "form" I mean {scales,nlin}). We can
-also do image testing at Adler Planetarium on the willing public
-there. The question we want to answer is: "how should we display an
-image to maximize the likelihood of an untrained human seeing
-interesting feature X?"  I have no idea where one sends paper like
-this - Ill ask the zooniverse team.'
+for arc visibility. We can also do image testing at Adler Planetarium on the willing public there. The question we want to answer is: ``how should we display an image to maximize the likelihood of an untrained human seeing interesting feature X?'' '
 
 
-%%=================================================
-%% UNMBRELLA
-%%=================================================
-\section{Combined Deconvolution and Colour}
-\ref{sec:combine}
+%%-------------------------------------------------
+\subsection{Quality Metrics}
 
-\citet{MCS98} -- must deconvolve all bands to target PSF before combining.
+
 
 
 \newpage
@@ -844,6 +906,8 @@ this - Ill ask the zooniverse team.'
 %% TO DO
 %%=================================================
 \section{To do}
+
+This is just a scrappy section of small things I need to do.
 
 \underline{Document}
 \begin{itemize}
@@ -866,7 +930,7 @@ this - Ill ask the zooniverse team.'
 	\item Invent quality metrics: each one represents the quantitiave answer to a particular question about some aspect of the reconstructed image -- its "noise" level, the correlated nature of that noise, the number of false SExtractor detections (in the reconstructed image) generated, the SExtractor flux of certain
 objects of interest, the number of inspectors who identify feature X, etc etc etc. We can propose and discuss these aspects after seeing some images.
 	\item arcsec\ra pixels method; will need header information.
-	\item Assert target PSFs of width 0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0 arcsec FWHM, and make deconvolved images for each value. Then plot your quality metric(s) against FWHM.
+	\item Assert target PSFs of width 0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0 arcsec FWHM, and make deconvolved images for each value. Plot quality metric(s) against FWHM.
 \end{itemize}
 
 \underline{Combining C\&D}
