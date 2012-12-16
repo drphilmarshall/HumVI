@@ -93,7 +93,7 @@ There is much scope in the future for ``crowd-sourcing'' the analysis of astrono
 For centuries, astronomers have continued to astonish the world with pictures of a Universe far richer and more magnificent than any ordinary mind could conceive. Perhaps more than any other field of science, astronomy relies on the analysis of images to draw conclusions about the natural world. Indeed, new and unusual astronomical objects, such as
 galaxies, nebulae, star clusters, supernovae and so on, appear readily to
 experienced viewers as they inspect new images \citep[a recent example is the amateur discovery of a quadruple star system, reported in][]{PH12}; our understanding of  the structure of, for example, galaxies can
-be improved by studying their morphology, by eye\footnote{{\bf Phil:} indeed, is it not true that there is sometimes little alternative if one wants to draw meaningful conclusions about galaxy structure? Perhaps it is beyond the scope here, but it may be interesting to discuss what can be done by computers and what cannot -- the question isn't really addressed head-on even in your theory paper, yet it provides a compelling motivation for this work.} \citep[e.g.][]{Lah95, Lah++95, For++11, But11}\footnote{{\bf Phil}: We really want evidence of \emph{visual} inspection being useful, hence these references. Possibly too many.}.
+be improved by studying their morphology, by eye\footnote{Indeed, there is sometimes little alternative if one wants to draw meaningful conclusions about galaxy structure. It is beyond the scope here, but a discussion of what tasks can be effectively performed by computers and what cannot would be both very interesing and a compelling motivation for this work.} \citep[e.g.][]{Lah95, Lah++95, For++11, But11}\footnote{These references are selected to provide evidence of \emph{visual} inspection being useful.}.
 Image viewing is a form of data exploration, an important step before making
 quantitative measurements. But both exploration and measurement involve data
 modeling, or inference: the viewer interprets the image in the context of a
@@ -105,8 +105,7 @@ incidence of false detections.
 One way to increase the frequency with which discoveries are made  could be to
 employ a larger number of experienced image viewers to look at images.  This
 approach is being taken by ``citizen science'' projects such as Galaxy Zoo
-(citation required\footnote{Cato, Phil: Add more zoo citations. In paper X they
-found Y, in paper Z they found...}). In the Galaxy Zoo system, color composite
+(citation required). In the Galaxy Zoo system, color composite
 images of galaxies are presented to large numbers of viewers, who carry out
 visual morphological studies guided by a short questionnaire. The viewers have
 a wide range of experience with astronomical images, and the majority of
@@ -266,7 +265,7 @@ As mentioned in the introduction, it is frequently possible and indeed desirable
 	\item Generate a symmetrical\footnote{Well, not actually circularly symmetric.} target PSF for the image, using the dimensions and flux properties of the image PSF from point~\ref{pnt:getpsf}. We call this the ``reference PSF'' or \psfref.\label{pnt:PSF0}
 	\item Create an object which maps the observed PSF to the reference PSF. This object is called the ``kernel'' and the mapping procedure is convolution.
 	\item Apply this procedure to the original image; this should correlate all the pixels in such a way as to rid the image of asymmetrical blurriness and replace it with a blurriness of known properties.
-	\item Finally, regularise the image by using some smoothing procedure.\MORE
+	\item Finally, regularise the image by using some smoothing procedure.
 \end{enumerate}
 
 The reader may be confused at this point as to why, if we can correctly calculate the PSF of an image, we don't simply do away with the blurriness altogether -- i.e. find a kernel which maps the PSF to a point. This would be a ``hard deconvolution'', a procedure which is compellingly discouraged by the work of \cite{MCS98} (see appendix~\ref{sec:MCS98notes} for more discussion of this paper). Following this work, we may endeavour to obtain better knowledge of the sky by reducing the PSF, but we must avoid inadvertently violating the sampling theorem, which would certainly happen if we attempted a hard deconvolution.
@@ -445,10 +444,11 @@ This contrasts with the traditional solution to the problem, which is to ``pad''
 
 DWH has argued semi-convincingly that we needn't make such a sacrifice in practice, because there is enough information in the border pixels to mitigate grave data-fabrication. See also the sections below, where this issue is discussed further in the context of a well-posed linear algebra problem.
 
-\begin{figure}[h]\label{fig:zeropad}
+\begin{figure}[h]
 	\centering
 	\includegraphics[width=0.33\linewidth]{Images/pad_zero_color.jpg}
 	\caption{An image padded with zeroes. Convolution with the 3$\times$3 stencil will now preserve image size; but at what cost?}
+	\label{fig:zeropad}
 \end{figure}
 
 
@@ -489,6 +489,8 @@ We should choose the padding so that the deconvolved image has the same size as 
 \end{figure}
 
 The kernel matrix has some conspicuous gaps. For the unpadded case, this comed from the kernel overlapping the image boundaries. For the padded case, we also need to factor in the fact that there are many extra zeroes for which we must acconut. It should be clear from the shapes of the images in figure~\ref{fig:kernmat_pad} that the unpadded matrix is underconstrained and the padded matrix is overconstrained.
+
+Note that all the black space in these matrices means we should be able to use sparse-matrix numerical packages to speed up computations.
 
 %%-------------------------------------------------------------------------------------------
 \subsubsection{Pseudocode}
@@ -558,65 +560,91 @@ With all this in mind, it seems we modify our algorithm above:
 	\item save\_image(refimg)
 \end{enumerate}}
 
-Having said all this, it is unclear how much benefit we actually get from including our prior information. The least-squares algorithm is convex, and has been well-optimised so it is also very fast. Should test this, but it's not central to the project so maybe some other time.
+Having said all this, it is unclear how much benefit we actually get from including our prior information. The least-squares algorithm is convex, and has been well-optimised so it is also very fast\footnote{\texttt{linalg.lstsq} uses ``householder bidiagonalization'' to decompose matrices. For an $m$ by $n$ matrix, the complexity will be $\mathcal{O}(\max(m, n) * \min(m, n)^2$.}. Should test this, but it's not central to the project so maybe some other time.
 
 
 %%-------------------------------------------------------------------------------------------
-\subsubsection{Testing}
+\subsubsection{Testing and Problems with Deconvolution Implementation}
+\label{sec:decontest}
 
-\paragraph{Now} This is what I'm doing at the moment to test my deconvolution code (both with and without the initial condition).
-\texttt{\begin{enumerate}
-	\item \psfobs = Gaussian(bigwidth)
-	\item \psfref = Gaussian(smallwidth)
-	\item kernel = get\_kernel(\psfref \ra \psfref)
-	\item decon = deconvolve(\psfobs, kernel)
-	\item saveimage(decon)
-\end{enumerate}}
+Now that the theory is in place, we can write a program which takes an image and deconvolves it to a constant PSF. But before we consider real astronomical images (e.g. from the CFHTLS catalogue we're using here), we should test the code in a situation where we know beforehand what to expect.
 
-This finds the convolution kernel which takes a small Gaussian to a large Gaussian. Then it finds the image, \texttt{decon}, which must be convolved with that kernel to give the large Gaussian. \texttt{decon} \emph{should} be the small Gaussian, right?
+It is a remarkable property of Gaussian functions that that the convolution of two Gaussians is another Gaussian:
+\begin{equation}
+	\mathcal{G}(r,\sigma_1^2) \ast \mathcal{G}(r,\sigma_2^2) = \mathcal{G}(r, \sigma_1^2+\sigma_2^2).
+\end{equation}
+This suggests that a good test problem would be a Gaussian scene (of width $\sigma_1$) and a Gaussian kernel (width $\sigma_2$): the observed image will be a third Gaussian with the quadrature-sum width. Our code should be able to infer any one of the three objects from the other two.
 
-So far this has not been the case; see figure~\ref{fig:decontest}, which shows the original image, the target PSF, the deconvolved image and the kernel (calculated according to the prescription above). The deconvolved image looks exactly like the original image, not the reference PSF as hoped.
- 
-\begin{figure}
- 	\def\width{0.2\linewidth}
- 	\def\scale{1}
- 	\centering
- 	\includegraphics[scale=\scale]{"../test/imdec_psfobs"}
- 	\includegraphics[scale=\scale]{"../test/imdec_psfref"}\\
- 	\includegraphics[scale=\scale]{"../test/imdec_odec"}
- 	\includegraphics[scale=6]{"../test/imdec_kern"}
- 	\caption{original image, target PSF, deconvolved image and the kernel}
- 	\label{fig:decontest}
-\end{figure}
+The results of such a trial are given in figure~\vref{fig:hoggtest}. Simple code to illustrate exactly what I'm doing with this test is on page~\pageref{cde:hoggtest}.
 
-Other than the results being wrong, here are some other things I've noticed:
-
-\begin{itemize}	
-	\item For Gaussian target and data, the kernel does not come out to be a Gaussian (\ref{fig:decontest}). What's going on?
-	\item It takes a long time to solve for the image. Even something of 100x100 pixels takes ten minutes on my computer.
-	\item It takes longer to solve the sparse system using Scipy's sparse linalg module than using Numpy's straight linalg module. Weird.
-	\begin{itemize}
-		\item (\texttt{linalg.lstsq} uses householder bidiagonalization to decompose. For an m by n matrix, the complexity will be $\mathcal{O}(\max(m, n) * \min(m, n)^2$).)
-	\end{itemize}	
-	\item My ``initial guess'' procedure doesn't seem to speed up convergence at all -- even when I give the exact solution as my initial guess! Is there some large overhead for using least-squares?
-	\begin{itemize}
-		\item Hogg says that the initial guess shouldn't help much because least squares is so fast. That doesn't explain why it still takes a long time when given exact solution.
-	\end{itemize}	
-\end{itemize}
-
-
-
-\paragraph{Constructing the kernel matrix $\mathbf K$ from the kernel image.} Figure~\ref{fig:kernmat} shows an image of the kernel matrix, constructed from the image in figure~\ref{fig:decontest}, to be used in equation~\ref{eqn:simple_deconvolve} for inferring the reference image.
 \begin{figure}[h]
-	\centering
-	\includegraphics[width=3cm]{"../test/kernmat"}
-	\caption{Kernel matrix used in linear algebra.}
-	\label{fig:kernmat}
+ 	\def\width{0.2\linewidth}
+ 	\def\scale{2}
+ 	\centering
+ 	\includegraphics[scale=\scale]{"../test/hoggtest_data_true"}
+ 	\includegraphics[scale=\scale]{"../test/hoggtest_data"}\\ \vspace{1mm}
+ 	\includegraphics[scale=\scale]{"../test/hoggtest_scene_true"}
+ 	\includegraphics[scale=\scale]{"../test/hoggtest_scene"}\\ \vspace{1mm}
+ 	\includegraphics[scale=5.64\scale]{"../test/hoggtest_kernel_true"}
+ 	\includegraphics[scale=5.64\scale]{"../test/hoggtest_kernel"}
+ 	\caption{From top: data, scene and kernel images (scaled 2x,2x,6x) produced with the scheme outlined in section~\ref{sec:decontest}. On the left is the ``correct'' image (2D Gaussian). On the right is output of program: scene convolved with kernel; data deconvolved with that kernel; and the kernel inferred from the scene and the data.}
+ 	\label{fig:hoggtest}
 \end{figure}
 
-The form of this matrix is governed by the inclusion of padded black-space in the observed image.
+We can note immediately that there is some problem. Leaving aside the mess of the inferred scene for a moment, we can observe that the kernel is clearly not a Gaussian. This is strange, because the kernel calculation is a highly over-constrained linear algebra problem, so there should be no ambiguity from that end.
 
-\paragraph{Deconvolving a larger image.} Once this works, I'll apply the same procedure to a larger image with several objects of size \psfobs; e.g. figure~\ref{fig:tiled}.
+It gets worse. It turns out that the shape of the inferred kernel image (already wrong) is sensitive to the size we specify for the image. In figure~\ref{fig:inferred_kernel_sizes}, I show the kernel output by my \texttt{get\_kernel} routine for a variety of requested kernel image sizes (all else is equal).
+\begin{figure}
+	\centering
+	\def\scale{2}
+	\includegraphics[scale=\scale]{../test/hoggtest_kernel_9}
+	\includegraphics[scale=\scale]{../test/hoggtest_kernel_11}
+	\includegraphics[scale=\scale]{../test/hoggtest_kernel_13}	
+	\includegraphics[scale=\scale]{../test/hoggtest_kernel_15}
+	\caption{A variety of kernels inferred from a Gaussian data image and scene image. The difference between the images is only the dimesnsions of the image required for the output -- but obviously there is something else going on here too. The sizes are 9, 11, 13 and 15 pixels. They should all be 2D Gaussians of width three pixels.}
+	\label{fig:inferred_kernel_sizes}
+\end{figure}
+
+The fact that neither the kernel inference nor the scene inference is working indicates that something is wrong with the way we construct linear algebra objects from the images (everything else has been tested extensively and shown to work). However, I've been over the construction of the matrices a number of times and haven't spotted any mistake; as of writing, I'm stumped.
+
+{\it Unfortunately this severely limits my ability to proceed with the rest of the work. Until resolve the problem, much of the rest of this document will have act as a ``placeholder'': the framework into which I place results / demonstrations of the code's effectiveness. This will be indicated in each section affected by the problem.}
+
+\begin{figure}
+	\begin{verbatim}
+	def decontest():
+			
+		t0 = time.time()
+		
+		## Define true scene, kernel, and data
+			## Arguments are image size, width of Gaussian (x,y), centre (x,y), total flux
+		scene_t  = DT.Gauss_2D(*[31, 4., 4., 15, 15, 1.])
+		kernel_t = DT.Gauss_2D(*[11, 3., 3., 5, 5, 1.])
+		data_t   = DT.Gauss_2D(*[31, 5., 5., 15, 15, 1.])
+		imsave("hoggtest_scene_true.png", scene_t)
+		imsave("hoggtest_kernel_true.png", kernel_t)
+		imsave("hoggtest_data_true.png", data_t)
+		
+		## Calculate data: convolve the scene with the kernel
+		data = scipy.signal.fftconvolve(scene_t, kernel_t, "same")
+		imsave("hoggtest_data.png", data)
+		
+		## Infer kernel: data = scene * k --> kernel
+		kernel = DT.get_kernel(scene_t, data_t, [11,11], False)
+		imsave("hoggtest_kernel.png",kernel)
+		
+		## Infer scene: data = scene * k --> scene
+		scene = DT.deconvolve_image(data_t, kernel_t, False)
+		imsave("hoggtest_scene.png",scene)
+		
+		print "Total time:", round(time.time()-t0,3), "seconds."
+		
+		return
+	\end{verbatim}
+	\caption{Illustrative code for the three tests which must be passed in order to show the deconvolution procedure is functioning properly: retrieve data from scene and PSF kernel; extract kernel from scene and data images; infer scene from kernel and data. The last two tests are of actual practical importance in this project.}
+	\label{cde:hoggtest}
+\end{figure}
+
+\paragraph{Next step: deconvolving a larger image.} Once the simple deconvolution step works, I'll apply the same procedure to a larger image with several objects of size \psfobs; e.g. figure~\ref{fig:tiled}. The result should be a similar array of objects with smaller width.
 \begin{figure}
 	\centering
 	\includegraphics[scale=1]{"../test/imdec_obig"}
@@ -624,78 +652,19 @@ The form of this matrix is governed by the inclusion of padded black-space in th
 	\label{fig:tiled}
 \end{figure}
 
-\paragraph{Speeding it up.} It may be possible to do the linalg-solve without computing the kernel matrix and performing numerous matrix products. The syntax is something like \texttt{solve(function, b)}, where \texttt{function} would be the operation I use to get the kernel matrix. Investigate this.
+\paragraph{Next step: speeding it up.} It may be possible to do the linalg-solve without computing the kernel matrix and performing numerous matrix products. The syntax is something like \texttt{solve(function, b)}, where \texttt{function} would be the operation I use to get the kernel matrix.
 
 
-\subsubsection{hoggtest}
+%%-------------------------------------------------------------------------------------------
+\subsubsection{Deconvolved Examples}
 
-A good test problem to pose is one where we know the answer in advance. An example for us to try could be a system where each image (data, kernel and scene) is a 2D Gaussian of some width. This relies on the (remarkable) property that the convolution of two Gaussians is another Gaussian:
-\begin{equation}
-	\mathcal{G}(r,\sigma_1^2) \ast \mathcal{G}(r,\sigma_2^2) = \mathcal{G}(r, \sigma_1^2+\sigma_2^2).
-	%\frac{1}{\sqrt{2\pi\sigma_1^2}}\exp\left[{-\frac{r^2}{2\sigma_1^2}}\right] \ast \frac{1}{\sqrt{2\pi\sigma_2^2}}\exp\left[{-\frac{r^2}{2\sigma_2^2}}\right] = \frac{1}{\sqrt{2\pi(\sigma_1^2+\sigma_2^2)}}\exp\left[{-\frac{r^2}{2(\sigma_1^2+\sigma_2^2)}}\right]
-\end{equation}
-To be totally explicit: if we pick our scene image to be a Gaussian with width $\sigma_1$ and our kernel to be a Gaussian with width $\sigma_2$, the data image will be a third Gaussian with the quadrature-sum width.
+[Note this section is a placeholder. Once the deconvolution code works I will flesh it out with images.]
 
-The results are in figure~\vref{fig:hoggtest}. Simple code is on page~\pageref{cde:hoggtest}.
+Now that we've satisfied ourselves that the deconvolution code works properly, we apply it to some astronomical images from the CFHTLS catalogue. In all cases, a kernel 15 pixels across was used to deconvolve to a PSF width of 2 pixels.
 
-\begin{figure}[h]
- 	\def\width{0.2\linewidth}
- 	\def\scale{2}
- 	\centering
- 	\includegraphics[scale=\scale]{"../test/hoggtest_scene_true"}
- 	\includegraphics[scale=\scale]{"../test/hoggtest_scene"}\\
- 	\includegraphics[scale=\scale]{"../test/hoggtest_data_true"}
- 	\includegraphics[scale=\scale]{"../test/hoggtest_data"}\\
- 	\includegraphics[scale=6]{"../test/hoggtest_kernel_true"}
- 	\includegraphics[scale=6]{"../test/hoggtest_kernel"}\\
- 	\caption{Scene, data and kernel (scaled 2x,2x,6x). On left is the ``correct'' image (2D Gaussian). On the right is output of program. Note each image has different intesity scale which is unhelpful.}
- 	\label{fig:hoggtest}
-\end{figure}
+\FIG{Original \ra deconvolved image}
 
-Note the obvious problem (identified earlier) that the kernel looks funny: clearly not a Gaussian. This is strange, because the kernel calculation is a highly over-constrained linear algebra problem, so there should be no ambiguity from that end.
-
-It turns out that for a size of 9x9 pixels, the kernel image looks pretty plausible. This, along with a number of other simple tests, lead me to believe that the code was working properly. But if we select a larger kernel size, say 15x15, the image looks like a mess and not at all what we expect.
-
-\FIG{kernel image 9x9, 15x15}
-
-
-\label{cde:hoggtest}\begin{verbatim}
-def hoggtest():
-		
-	t0 = time.time()
-	
-	## Define true scene, kernel, and data
-		## Arguments are image size, width of Gaussian (x,y), centre (x,y), total flux
-	scene_t  = DT.Gauss_2D(*[30, 4., 4., 15, 15, 1.])
-	kernel_t = DT.Gauss_2D(*[9, 3., 3., 4, 4, 1.])
-	data_t   = DT.Gauss_2D(*[30, 5., 5., 15, 15, 1.])
-	scipy.misc.imsave("hoggtest_scene_true.png", scene_t)
-	scipy.misc.imsave("hoggtest_kernel_true.png", kernel_t)
-	scipy.misc.imsave("hoggtest_data_true.png", data_t)
-	
-	## Data: convolve the scene with the kernel
-	data = scipy.signal.fftconvolve(scene_t, kernel_t, "same")
-	scipy.misc.imsave("hoggtest_data.png", data)
-	
-	## Kernel: data = scene * k --> kernel
-	kernel = DT.get_kernel(scene_t, data_t, [9,9], False)
-	scipy.misc.imsave("hoggtest_kernel.png",kernel)
-	
-	## Scene: data = scene * k --> scene
-	scene = DT.deconvolve_image(data_t, kernel_t, False)
-	scipy.misc.imsave("hoggtest_scene.png",scene)
-	
-	## Moments
-	print DT.moments(scene)
-	print DT.moments(kernel)
-	print DT.moments(data)
-	
-	print "Total",round(time.time()-t0,3)
-	
-	return
-\end{verbatim}
-
-
+\TODO{Comment on shape / noise properties of deconvolved images}
 
 %%-------------------------------------------------------------------------------------------
 \subsubsection{Shortcomings}
@@ -1011,6 +980,27 @@ But before troubling astonomers or members of the public with such requests, we 
 
 
 
+
+\begin{comment}
+\newpage
+%%=================================================
+%% FURTHER WORK
+%%=================================================
+\section{Further Work}
+
+Clearly there is much more to be done here. These are some things we've already touched upon:
+\begin{itemie}
+	\item Optimise params for humans
+
+	\item Speed up?
+
+	\item Quality metrics
+
+	\item Noise in wherry
+	
+	\item Regularisation
+\end{itemize}
+\end{comment}
 
 \begin{comment}
 \newpage
