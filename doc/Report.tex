@@ -4,6 +4,7 @@
 %=================================================
 
 \usepackage{fullpage, parskip}
+\usepackage{changepage}
 \usepackage{fancyhdr}
 \usepackage{amsmath, mathtools}
 \usepackage{amssymb}
@@ -67,7 +68,7 @@
 
 
 \begin{abstract}
-There is much scope in the future for ``crowd-sourcing'' the analysis of astronomical images. But the images will have to be presented in an intuitive and clear way so that non-experts have a shot at making an informed and useful contribution. In a summer project guided by David Hogg and Phil Marshall, I attempted to satisfy this need by devising a pipeline for the production of deconvolved RGB images from photometric telescope data.
+There is much scope in the future for ``crowd-sourcing'' the analysis of astronomical images. But the images will have to be presented in an intuitive and clear way so that non-experts have a shot at making an informed and useful contribution. In a summer project guided by David Hogg and Phil Marshall, I attempted to satisfy this need by devising a pipeline for the production of deconvolved RGB images from photometric telescope data. Though the project met with moderate success on many fronts, I encountered a computational problem with a key step in the deconvolution process; this impeded overall progress. The issue endures, and though it was possible to focus to some extent on other aspects of the project, it was not possible to achieve the stated goals. This notwithstanding, the architecture and principles of the project, as well as the results that were obtained, are discussed.
 \end{abstract}
 
 
@@ -560,7 +561,7 @@ With all this in mind, it seems we modify our algorithm above:
 	\item save\_image(refimg)
 \end{enumerate}}
 
-Having said all this, it is unclear how much benefit we actually get from including our prior information. The least-squares algorithm is convex, and has been well-optimised so it is also very fast\footnote{\texttt{linalg.lstsq} uses ``householder bidiagonalization'' to decompose matrices. For an $m$ by $n$ matrix, the complexity will be $\mathcal{O}(\max(m, n) * \min(m, n)^2$.}. Should test this, but it's not central to the project so maybe some other time.
+Having said all this, it is unclear how much benefit we actually get from including our prior information. The least-squares algorithm is convex, and has been well-optimised so it is also very fast\footnote{\texttt{linalg.lstsq} uses ``householder bidiagonalization'' to decompose matrices. For an $m$ by $n$ matrix, the complexity will be $\mathcal{O}\{\max(m, n) * \min(m, n)^2\}$.}. Should test this, but it's not central to the project so maybe some other time.
 
 
 %%-------------------------------------------------------------------------------------------
@@ -612,7 +613,8 @@ The fact that neither the kernel inference nor the scene inference is working in
 \begin{figure}
 	\begin{verbatim}
 	def decontest():
-			
+	\end{verbatim}
+		\begin{adjustwidth}{1cm}{0cm}\begin{verbatim}	
 		t0 = time.time()
 		
 		## Define true scene, kernel, and data
@@ -639,7 +641,7 @@ The fact that neither the kernel inference nor the scene inference is working in
 		print "Total time:", round(time.time()-t0,3), "seconds."
 		
 		return
-	\end{verbatim}
+	\end{verbatim}\end{adjustwidth}
 	\caption{Illustrative code for the three tests which must be passed in order to show the deconvolution procedure is functioning properly: retrieve data from scene and PSF kernel; extract kernel from scene and data images; infer scene from kernel and data. The last two tests are of actual practical importance in this project.}
 	\label{cde:hoggtest}
 \end{figure}
@@ -658,7 +660,7 @@ The fact that neither the kernel inference nor the scene inference is working in
 %%-------------------------------------------------------------------------------------------
 \subsubsection{Deconvolved Examples}
 
-[Note this section is a placeholder. Once the deconvolution code works I will flesh it out with images.]
+[Note this section is a placeholder. Once the deconvolution code works I should flesh it out with images.]
 
 Now that we've satisfied ourselves that the deconvolution code works properly, we apply it to some astronomical images from the CFHTLS catalogue. In all cases, a kernel 15 pixels across was used to deconvolve to a PSF width of 2 pixels.
 
@@ -838,13 +840,13 @@ Figure~\ref{fig:linear_stretch} shows the results of the procedure performed on 
 \subsubsection{Noise Properties Post-Deconvolution}
 \label{sec:deconvolution_noise}
 
-We use stretches to make images more readily interpretable, and we will perform such procedures on original and deconvolved images alike. Since the overarching framework of this project is about pattern recognition, it is necessary to analyse the effects of such manipulations on the noise properties of the image. Below we show stretches of increasing severity on an original image and its deconvolved counterpart.
+[Note that this section will only be complete once the deconvolution code is up to scratch. The images which purport to be deconvolved are nothing of the sort. They are just placeholders.]
 
-\TODO{Right column should be deconvolved image}
+We use stretches to make images more readily interpretable, and we will perform such procedures on original and deconvolved images alike. Since the overarching framework of this project is about pattern recognition, it is necessary to analyse the effects of such manipulations on the noise properties of the image. Below we show stretches of increasing severity on an original image and its deconvolved counterpart.
 
 \begin{figure}
 	\centering
-	\def\width{0.15}
+	\def\width{0.23}
 	\includegraphics[width=\width\linewidth]{../../Data/CFHTLS_06/CFHTLS_06_r/CFHTLS_06_r_sci}	
 	\includegraphics[width=\width\linewidth]{../../Data/CFHTLS_06/CFHTLS_06_r/CFHTLS_06_r_sci}\\\vspace{1mm}
 	\includegraphics[width=\width\linewidth]{../../Data/CFHTLS_06/CFHTLS_06_r/Enhanced_Original/CFHTLS_06_r_sci_rescaled2.png}
@@ -892,10 +894,47 @@ The most obvious distinction between the methods (rather than the implementation
 	\includegraphics[width=0.4\linewidth]{{../examples/composed_lupton_10,0.04_Auto}.png}
 	\includegraphics[width=0.4\linewidth]{{../examples/composed_10,0.04_Auto}.png}
 	\caption{Comparing the results of combining the i, r and g bands of CFHTLS\_27\_sci using lupton (left) and wherry (right). The same nonlinearity parameters and colour scalings were used for both images.}
-	\label{fig:lupton_wherry}
+	\label{fig:lupton_wherry_27}
 \end{figure}
 
-Figure~\ref{fig:lupton_wherry}, we see that as expected the methods produce very similar results in terms of colouration and and intensity. However, the wherry image clearly has much higher noise levels, which sensibly degrade the image quality.
+Figure~\ref{fig:lupton_wherry_27}, we see that as expected the methods produce very similar results in terms of colouration and and intensity. However, from this example it would seem that wherry produces sensibly dimmer images. The reason for this is unclear at the moment.
+
+Figures~\vref{fig:lupton_wherry_12},~\vref{fig:lupton_wherry_03} and~\vref{fig:lupton_wherry_11} are three more composites. The first two showcase the necessity for choosing appropriate scalings -- the first pair of images in both figures use the automatic scalings, which leads to over-dominance of the i-band. The next two rows of figures~\ref{fig:lupton_wherry_03} and~\ref{fig:lupton_wherry_11} are attempts to rebalance the image so that details and colour information don't get bleached out. There will always be a degree of subjectivity and compromise in this endeavour. Some objects will become better resolved, but others may lose resolution. Ideally we would have experts analyse a variety of scalings and choose the best ones -- see sections~\ref{sec:quality_human} and~\ref{sec:quality_metric}.
+
+Figure~\ref{fig:lupton_wherry_11} seems to have suffered from some strong pixel noise in the r band, leading to obviously spurious green features. The influence of this will diminish after deconvolution, but the damage is already done to some extent, since they will have skewed the whole image scaling / covariance properties. This is where a masking array would come in handy.
+
+\begin{figure}[h]
+	\centering
+	\def\width{0.3}
+	\includegraphics[width=\width\linewidth]{{../../Data/CFHTLS_12/composed_lupton_10,0.04_Auto}.png}
+	\includegraphics[width=\width\linewidth]{{../../Data/CFHTLS_12/composed_10,0.04_Auto}.png} \\\vspace{1mm}
+	\includegraphics[width=\width\linewidth]{{../../Data/CFHTLS_12/composed_lupton_10,0.04_1.0,1.0,1.0}.png}
+	\includegraphics[width=\width\linewidth]{{../../Data/CFHTLS_12/composed_10,0.04_1.0,1.0,1.0}.png} \\\vspace{1mm}
+	\includegraphics[width=\width\linewidth]{{../../Data/CFHTLS_12/composed_lupton_10,0.04_0.5,0.8,2.0}.png}
+	\includegraphics[width=\width\linewidth]{{../../Data/CFHTLS_12/composed_10,0.04_0.5,0.8,2.0}.png} 
+	\caption{CFHTLS\_12 lupton- (left) and wherry- (right) composite, with three scalings. Top: autoscale; middle: [1.0,1.0,1.0]; bottom: [0.5,0.8,2.0].}
+	\label{fig:lupton_wherry_12}
+\end{figure}
+\begin{figure}[h]
+	\centering
+	\def\width{0.3}
+	\includegraphics[width=\width\linewidth]{{../../Data/CFHTLS_03/composed_lupton_10,0.04_Auto}.png}
+	\includegraphics[width=\width\linewidth]{{../../Data/CFHTLS_03/composed_10,0.04_Auto}.png} \\\vspace{1mm}
+	\includegraphics[width=\width\linewidth]{{../../Data/CFHTLS_03/composed_lupton_10,0.04_0.7,1.0,2.0}.png}
+	\includegraphics[width=\width\linewidth]{{../../Data/CFHTLS_03/composed_10,0.04_0.7,1.0,2.0}.png} \\\vspace{1mm}
+	\includegraphics[width=\width\linewidth]{{../../Data/CFHTLS_03/composed_lupton_10,0.04_0.7,1.0,3.0}.png}
+	\includegraphics[width=\width\linewidth]{{../../Data/CFHTLS_03/composed_10,0.04_0.7,1.0,3.0}.png} 
+	\caption{CFHTLS\_03 lupton- (left) and wherry- (right) composite, with three scalings. Top: autoscale; middle: [1.0,1.0,1.0]; bottom: [0.5,0.8,2.0].}
+	\label{fig:lupton_wherry_03}
+\end{figure}
+\begin{figure}[h]
+	\centering
+	\def\width{0.3}
+	\includegraphics[width=\width\linewidth]{{../../Data/CFHTLS_11/composed_lupton_10,0.04_Auto}.png}
+	\includegraphics[width=\width\linewidth]{{../../Data/CFHTLS_11/composed_10,0.04_Auto}.png}
+	\caption{CFHTLS\_11 lupton- (left) and wherry- (right) composite. Scales are auto.}
+	\label{fig:lupton_wherry_11}
+\end{figure}
 
 %%-------------------------------------------------
 \subsection{Pseudocode for ``wherry'' Composition}
@@ -935,15 +974,18 @@ Here are the general steps in the code for a run of the wherry procedure.
 \section{Combined Deconvolution and Colour}
 \label{sec:combine}
 
+[Since the deconvolution side of things is not working yet, there is not much substance in this section.]
+
 One of the first questions we asked was how to combine images of different qualities and still make the most of the information in each one; how do we prevent the low-quality images from poisoning the combination? For instance, say we have i-, r-, and g-band images of a galaxy, but by chance atmospheric fluctuations the r-band is very blurred. If we simply add the images together pixel by pixel, we'll end up in a situation like figure~\ref{fig:fuzz}, where the colours were distorted. Since colour is an important astronomical diagnostic, if this happens we'd be in trouble.
 
 We now have the tools to begin solving this problem. Clearly we want to homogenise the blurriness of each of our R, G and B channels; that is make sure they have the same PSF. With these deconvolved raw imagess in hand, we can combine them \`a la section~\ref{sec:colour} to get a clean-looking result.
 
-\TODO{Examples? Don't have good data to do this? Can't deconvolve yet?}
+\TODO{Examples: raw-image composites versus deconvolved-image (2 pix) composites.}
 
 
 %%-------------------------------------------------
 \subsection{Finding Optimal Parameters for Image Manipulation}
+\label{sec:quality_human}
 
 Recall that the overarching goal into which this project fits is to make certain features in astronomical imaged readily apprent to human veiwers. At some point, the free parameters of our procedure must be decided, in line with this aim; the best way to achieve this is to test the results of different stretches, scales and deconvolution properties on subjects who can rate the images on their clarity and the distinctness of fine structure.
 
@@ -958,6 +1000,7 @@ for arc visibility. We can also do image testing at Adler Planetarium on the wil
 
 %%-------------------------------------------------
 \subsection{Quality Metrics}
+\label{sec:quality_metric}
 
 But before troubling astonomers or members of the public with such requests, we should first try to rate the processed data with some objective measures of their quality. I haven't yet explored any of this to the extent of implementation, but here are a few ideas which might be a good starting point.
 \begin{itemize}
@@ -1196,7 +1239,7 @@ is simply our reconstructed image, with background and point sources, while
 \end{equation}
 ``re-blurs'' the reconstruction for comparison with the data, $d_i$. The first term of equation~\ref{eqn:minimisation_functional} is therefore a $\chi^2$ term for our model and our data, albeit with the model decomposed into two pieces.
 
-The second term is included to ensure smoothness of the background\ldots \MORE
+The second term is included to ensure smoothness of the background.
 
 We can re-express the minimisational functional in terms of a linear algebra operation. The most immediate way is
 \begin{align}
@@ -1234,9 +1277,9 @@ where, to be totally explicit, we've listed all the variables again in table~\re
 	\end{table}
 \end{center}
 
-We can still readily see the structure of what's going on (see comments following equation~\ref{eqn:minimisation_functional}). One issue that immediately presents itself is how very expensive the minimisation procedure is. Each step will require the evaluation of $S$ at least \emph{five} \TODO{Cato: is this true?} times (for calculating $S$ and its numerical derivatives); while each step requires three matrix-vector multiplications, which require $N^2$ operations ($N$, remember, is the number of pixels, which could easily be more than a million). So at the end of the day, we are left with a minimisation procedure which needs around 15$N^2$~ops per iteration. Using the conjugate gradient method, we may be looking at up to $N$ iterations, giving us a grand total of $\mathcal{O}(10)\cdot N^3$ operations per image. \TODO{any improvement on this would be good}.
+We can still readily see the structure of what's going on (see comments following equation~\ref{eqn:minimisation_functional}). One issue that immediately presents itself is how very expensive the minimisation procedure is. Each step will require the evaluation of $S$ at least \emph{five} times (for calculating $S$ and its numerical derivatives); while each step requires three matrix-vector multiplications, which require $N^2$ operations ($N$, remember, is the number of pixels, which could easily be more than a million). So at the end of the day, we are left with a minimisation procedure which needs around 15$N^2$~ops per iteration. Using the conjugate gradient method, we may be looking at up to $N$ iterations, giving us a grand total of $\mathcal{O}(10)\cdot N^3$ operations per image.\footnote{None of this is definitely true, but there will be some similar calculation with different scalings.}
 
-Another obvious question which must be answered is whence the initial guess for the point and extended sources, $\vec{\alpha^\prime}$ and $\vec{h}$, come. Note that it is not enough to simply use the original image, since our algorithm needs the point sources to be distinguished from everything else. We have already generated a catalogue of all the sources (along with their coordinates) in our image using SExtractor.  We've also used PSFEx to determine which of the sources were point sources -- if we can extract this information from the software \TODO{Cato: look into this, otherwise whole algorithm will be much slower}, it should be possible to make a very good estimate for the initial image.
+Another obvious question which must be answered is whence the initial guess for the point and extended sources, $\vec{\alpha^\prime}$ and $\vec{h}$, come. Note that it is not enough to simply use the original image, since our algorithm needs the point sources to be distinguished from everything else. We have already generated a catalogue of all the sources (along with their coordinates) in our image using SExtractor.  We've also used PSFEx to determine which of the sources were point sources -- if we can extract this information from the software, it should be possible to make a very good estimate for the initial image.
 
 ------
 
@@ -1254,22 +1297,6 @@ Now we outline the steps required to minimise the functional $S$ from equation~\
 	\end{itemize}
 \end{enumerate}
 
-------
-
-Here is some pseudocode for calculating $S$.
-\texttt{\begin{enumerate}
-	\item Do it
-\end{enumerate}}
-
-------
-
-Here is pseudocode for calculating the derivatives of $S$.
-\texttt{\begin{enumerate}
-	\item Do it
-\end{enumerate}}
-
-\TODO{Cato:} read about conjugate gradient method: \citet{She94}
-
 
 
 %%=================================================
@@ -1280,7 +1307,7 @@ Here is pseudocode for calculating the derivatives of $S$.
 
 \paragraph{Quote}
 
-'sheer drama and beauty of the night sky'
+`the sheer drama and beauty of the night sky'
 
 \paragraph{Key Idea}
 
@@ -1321,11 +1348,9 @@ Here is pseudocode for calculating the derivatives of $S$.
 %%=================================================
 \section{Home-Brew Convolution Code}
 
-\TODO{Cato: Needs tidying / deleting}
+When performing a convolution, the SciPy method \texttt{scipy.signal.fftconvolve} does the job nicely. We can even tell this module to reduce the size of the convolved image (\texttt{mode="valid"}), in keeping with the concerns raised in section~\ref{sec:shave}.
 
-Alternatively, we can simply use a pre-existing module which performs the convolution for us: \texttt{scipy.signal.fftconvolve} does the job nicely. We can even tell this module to reduce the size of the convolved image (\texttt{mode="valid"}), in keeping with the concerns raised in section~\ref{sec:shave}.
-
-However, it would be na\"ive to simply place our trust in SciPy -- their convolution method may be subtly different from the one we wish to use for scientific inference. Thus, we cannot escape having to implement the concolution procedure of equation~\ref{eqn:simple_deconvolve}. Figure~\vref{fig:deconvolution_comparison} shows a comparison, with residuals. Leaving aside the image arteficts from using a small convolution kernel (\MORE FIX!), we can see that the two methods do not agree completely. This is worrying, but according to DWH the problem is almost certainly with my implementation rather than SciPy's, and I am inclined to agree (it might be a simple indexing error). Combined with the fact that SciPy is around 15 times faster, it makes little sense to labour on with my code; so we adopt the SciPy convolution module.
+However, it would be na\"ive to simply place our trust in SciPy -- their convolution method may be subtly different from the one we wish to use for scientific inference. Thus, we cannot escape having to implement the concolution procedure of equation~\ref{eqn:simple_deconvolve}. Figure~\vref{fig:deconvolution_comparison} shows a comparison, with residuals. Leaving aside the image arteficts from using a small convolution kernel, we can see that the two methods do not agree completely. This is worrying, but according to DWH the problem is almost certainly with my implementation rather than SciPy's, and I am inclined to agree (it might be a simple indexing error). Combined with the fact that SciPy is around 15 times faster, it makes little sense to labour on with my code; so we adopt the SciPy convolution module.
 
 \begin{figure}
 	\def\width{0.3\textwidth}
