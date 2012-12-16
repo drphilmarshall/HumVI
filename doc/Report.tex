@@ -18,6 +18,7 @@
 \captionsetup{compatibility=false}
 \usepackage[usenames,dvipsnames]{color}
 \usepackage{pdfpages}
+\usepackage{comment}
 \usepackage{xspace}
 %% Journal control sequences
 \usepackage{aas_macros} 
@@ -341,13 +342,78 @@ where the vector $\vec a$ and the matrix $\mathbf{B}$ encode the original and de
 
 The vectors $\vec a$ and $\vec k$ are easy to construct -- rows of the 2D image are concatenated into a long 1D array (this is called ``flattening''). If $\mathcal A$ is an image of $N$ pixels, then $\vec a$ will have $N$ elements. The kernel $\vec k$ has many fewer elements, but the procedure is exactly the same.
 
-The target-PSF image matrix, $\mathbf B$ is less strightforward. We must think carefully about the convolution process to understand what's going on here. Consider a uniform $3\!\times\!3$ kernel being convolved with a $9\!\times\!9$ image, as shown in figure~\ref{fig:linalg_convolution}.
+The target-PSF image matrix, $\mathbf B$ is less strightforward. We must think carefully about the convolution process to understand what's going on here. Consider a uniform $3\!\times\!3$ kernel being convolved with a $5\!\times\!5$ image, as shown in figure~\ref{fig:convolution_pix}. The form of the pixels suggests that it may be represented as the linear algebra operation shown in figure~\ref{fig:convolution_linalg}.
 
-\FIG{Convolution \ra linear algebra}\label{fig:linalg_convolution}
+\begin{figure}
+	\begin{center}\begin{tabular}{|c|c|c|c|c|}
+		\hline
+		1&2&3&4&5\\
+		\hline
+		6&7&8&9&10\\
+		\hline
+		11&12&13&14&15\\
+		\hline
+		16&17&18&19&20\\
+		\hline
+		21&22&23&24&25\\
+		\hline
+	\end{tabular}
+	%
+	\hspace{1mm} $\ast$ \hspace{1mm}
+	%
+	\begin{tabular}{|c|c|c|}
+		\hline
+		A&B&C\\
+		\hline
+		D&E&F\\
+		\hline
+		G&H&I\\
+		\hline
+	\end{tabular}
+	%
+	\hspace{1mm} = \hspace{1mm}
+	%
+	\begin{tabular}{|p{2.6cm}|c|c|}
+		\hline
+		1A+2B+3C+ +6D+7E+8F+ +11G+12H+13I & \ldots & \ldots\\
+		\hline
+		\ldots &\ldots &\ldots\\
+		\hline
+		\ldots &\ldots &\ldots\\
+		\hline
+	\end{tabular}\end{center}
+	\caption{A five-by-five image (left) with pixels numbered from one to 25, is convolved with a three-by-three kernel (right) with pixels labelled from A to I. Notice the final image is smaller than the original -- more on this in section~\ref{sec:shave}.}
+	\label{fig:convolution_pix}
+\end{figure}
 
-\MORE
+\begin{figure}
+	\begin{center}
+	$\begin{pmatrix}
+		1&2&3&6&7&8&11&12&13\\
+		2&3&4&7&8&9&12&13&14\\
+		3&4&5&8&9&10&13&14&15\\
+		&&&&\vdots
+	\end{pmatrix}$
+	%
+	$\begin{pmatrix}
+		A\\B\\C\\
+		D\\E\\\vdots
+	\end{pmatrix}$
+	%
+	\hspace{1mm} = \hspace{1mm}
+	%
+	$\begin{pmatrix}
+		1A+2B+3C+\\+6D+7E+8F+\\+11G+12H+13I \\
+		\vdots
+	\end{pmatrix}$\end{center}
+	\caption{The convolution procedure of figure~\ref{fig:convolution_pix} is translated into a matrix operation.}
+	\label{fig:convolution_linalg}
+\end{figure}
 
-$\mathbf B$ is then a matrix with ${\rm size}(a)$ rows and ${\rm size}(k)$ columns. The vector problem in equation~\ref{eqn:vector} is overdetermined (the kernel is smaller than \psfobs), so we must use some ``best fit'' procedure (typically least-squares minimisation) to find $\vec k$.
+
+The $\mathbf B$ matrix of equation~\ref{eqn:vector} is then a matrix with ${\rm size}(a)$ rows and ${\rm size}(k)$ columns. Moreover, it has a skew-diagonal Toeplitz structure, which will help us to constuct it later.
+
+Presently, the vector problem in equation~\ref{eqn:vector} is overdetermined (the kernel is smaller than \psfobs), so we must use some ``best fit'' procedure -- typically least-squares minimisation -- to find $\vec k$.
 
 %%-------------------------------------------------------------------------------------------
 \subsubsection{Pseudocode}
@@ -371,13 +437,13 @@ $\mathbf B$ is then a matrix with ${\rm size}(a)$ rows and ${\rm size}(k)$ colum
 \subsubsection{Interlude: Honesty Note}
 \label{sec:shave}
 
-When we convolve two images, we produce a new image pixel by taking a weighted sum of the surrounding pixels. For instance, say we convolve a large image $\mathcal{B}$ with a 3$\times$3-pixel image to get $\mathcal{A}$. The first (i.e. top-left) pixel of $\mathcal{A}$ that we can properly determine is not the same as the first pixel of $\mathcal{B}$, because \MORE.
+When we convolve two images, we produce a new image pixel by taking a weighted sum of the surrounding pixels. For instance, say we convolve a large image $\mathcal{B}$ with a 3$\times$3-pixel image to get $\mathcal{A}$. The first (i.e. top-left) pixel of $\mathcal{A}$ that we can properly determine is not the same as the first pixel of $\mathcal{B}$, because we require input from the eight pixels around every $\mathcal B$ pixel in order to get an $\mathcal{A}$ pixel.
 
 Thus, the honest thing to do is to throw away some information by making image $\mathcal A$ smaller than $\mathcal B$ -- in this example with a 3$\times$3 image, we shave off the four outer edges, so if $\mathcal B$ is $N\times M$, $\mathcal A$ is $(N-2)\times(M-2)$. A bigger convolving image would require more pixels to be lost from the result.
 
 This contrasts with the traditional solution to the problem, which is to ``pad'' the original image with zeroes (see figure~\ref{fig:zeropad}) such that the final image is the same size as the (pre-padded) original was. This seems to introduce spurious information -- how can we possibly know that there are zeros at the border of an image? Often this is patently not the case, even for astronomical images which can be mostly black. With this in mind, it may seem preferable to adopt the ``lossy'' procedure outlined in the last paragraph.
 
-DWH has argued semi-convincingly that we needn't make such a sacrifice in practice, because there is enough information in the border pixels to mitigate grave data-fabrication. Hmm\ldots
+DWH has argued semi-convincingly that we needn't make such a sacrifice in practice, because there is enough information in the border pixels to mitigate grave data-fabrication. See also the sections below, where this issue is discussed further in the context of a well-posed linear algebra problem.
 
 \begin{figure}[h]\label{fig:zeropad}
 	\centering
@@ -409,11 +475,20 @@ How to resolve the conflict? Notice that in violating the section~\ref{sec:shave
 
 Now there are two possibilities: (i) ``pad'' the data image $\mathcal A$ with zeroes; this will allow us to maintain the size of the inferred image. (ii) Keep $\mathcal A$ the same and accept a smaller inferred image $\mathcal B$. (In both cases, the kernel matrix $\mathbf K$ is taller than it is wide.) The choice isn't particularly compelling -- in (i) we are introducing spurious information but this is confined to the edges; in (ii) we maintain the purity of our method, but may introduce problems later on when we try to compare the images. Uncharacteristically, I'll opt for (i), the simpler-but-corrupt choice.
 
-We should choose the padding so that the deconvolved image has the same size as the original data image. This means making a border of black pixels with total width ahnd height equal to the width and height of the kernel image. The changes to how we construct our kernel matrix are less trivial, and require careful thought and much picture-drawing (often it is hard to visualise how image manipulations translate into linear algebra operations). The kernel matrix corresponding to a 2D Gaussian kernel is shown in figure~\ref{fig:kernmat}.
+We should choose the padding so that the deconvolved image has the same size as the original data image. This means making a border of black pixels with total width ahnd height equal to the width and height of the kernel image. The changes to how we construct our kernel matrix are less trivial, and require careful thought and much picture-drawing (often it is hard to visualise how image manipulations translate into linear algebra operations). The kernel matrix corresponding to a 2D Gaussian kernel is shown in figure~\ref{fig:kernmat_pad}.
 
-\FIG{Kernmat image}
-\label{fig:kernmat}
+\begin{figure}[h]
+	\centering
+	\includegraphics[scale=1]{./Images/kernel.png}\\\vspace{1mm}
+	\includegraphics[scale=1]{./Images/image.png}
+	\includegraphics[scale=1]{./Images/image_pad.png}\\\vspace{1mm}
+	\includegraphics[scale=0.1]{./Images/kernmat.png}
+	\includegraphics[scale=0.1]{./images/kernmat_pad.png}
+	\caption{Kernel matrix from the kernel image. Top: the convolution kernel. Middle row: the data (left) and the data padded all around with zeroes. Bottom: the matrix constructed from the kernel image in the case of the unpadded data (left) and the padded data (right).}
+	\label{fig:kernmat_pad}
+\end{figure}
 
+The kernel matrix has some conspicuous gaps. For the unpadded case, this comed from the kernel overlapping the image boundaries. For the padded case, we also need to factor in the fact that there are many extra zeroes for which we must acconut. It should be clear from the shapes of the images in figure~\ref{fig:kernmat_pad} that the unpadded matrix is underconstrained and the padded matrix is overconstrained.
 
 %%-------------------------------------------------------------------------------------------
 \subsubsection{Pseudocode}
@@ -630,7 +705,7 @@ That still isn't the end of the story, as equation~\ref{eqn:simple_deconvolve} h
 \begin{enumerate}
 	\item In using our recorded image to recover a ``better'' one (which bears more resmblance to the scene), we have ignored the existence of \emph{noise} in the data. This problem will be addressed in section~\vref{sec:pixvar}.
 	
-	\item The procedure outlined in this section may not be well-determined, so the solution may be flexible. Typically, this will introduce artefacts into the image, which, given the goals outlined in the introduction, would be highly unwelcome.\newline The reference image we have obtained at this point must be ``regularised'', or smoothed according to some well-motivated principles. One can find a good discussion of these principles in \citet{MCS98}: this paper is outlined in appendix~\ref{sec:MCS98notes}. Some comments on their mathematical procedure can be found in appendix~\ref{sec:MCS98procedure}. \newline Though it would be entirely possible to implement this for the current project (indeed, we have already generated much of the necessary data), it may well be overkill. Instead, a more modest regularisation scheme is proposed in section~\ref{sec:regularisation}.
+	\item The procedure outlined in this section may not be well-determined, so the solution may be flexible. Typically, this will introduce artefacts into the image, which, given the goals outlined in the introduction, would be highly unwelcome.\newline The reference image we have obtained at this point must be ``regularised'', or smoothed according to some well-motivated principles. One can find a good discussion of these principles in \citet{MCS98}: this paper is outlined in appendix~\ref{sec:MCS98notes}. Some comments on their mathematical procedure can be found in appendix~\ref{sec:MCS98procedure}. \newline Though it would be entirely possible to implement this for the current project (indeed, we have already generated much of the necessary data), it may well be more effort than necessary. A more modest regularisation scheme will eventually be proposed in section~\ref{sec:regularisation}.
 \end{enumerate}
 
 
@@ -685,7 +760,6 @@ It is easy to show, using the symmetry of $\mathbf{C}$, that using this matrix e
 \subsubsection{Pseudocode}
 
 We modify the procedure of section~\ref{sec:decon_pseudocode} to accomodate the covariance matrix (we only really modify part~\ref{pnt:sparse_solve}, but for completeness here is the whole thing):
-
 \texttt{\begin{enumerate}
 	\item img\_array = readin(imagefile)\newline~\mbox{}~\hspace{1cm}\#\# Or can be given as straight array
 	\item img\_vec = img\_array.flatten()
@@ -760,7 +834,8 @@ The necessity for locally calculating covariance matrices as in section~\ref{sec
 
 After deconvolution, there will sometimes be image artefacts, or ambiguity as to the ``best'' solution (e.g. in the case of an underdetermined problem). We can reduce these using a regularisation technique, which typically involves minimising a cost function associated with the distirbution of intensity in the image. Choosing the cost function will be to some extent a matter of preference, since it encodes many of our assumptions about what the image ought to look like.
 
-\citet{MCS98} propose an effective regularisation scheme (see appendix~\ref{sec:MCS98notes}), but, as noted above, what they do may be overkill for our purposes. As of writing, this project hadn't reached the stage of incorporating a robust regularisation scheme; so this section is really a placeholder for further work.
+\citet{MCS98} propose an effective regularisation scheme (see appendix~\ref{sec:MCS98notes}), but, as noted above, what they do may be overkill for our purposes. As of writing, this project hadn't reached the stage of incorporating a robust regularisation scheme; so this section is a placeholder for further work.
+
 
 %%=================================================
 %% Image Manipulation
@@ -796,10 +871,24 @@ Figure~\ref{fig:linear_stretch} shows the results of the procedure performed on 
 
 We use stretches to make images more readily interpretable, and we will perform such procedures on original and deconvolved images alike. Since the overarching framework of this project is about pattern recognition, it is necessary to analyse the effects of such manipulations on the noise properties of the image. Below we show stretches of increasing severity on an original image and its deconvolved counterpart.
 
-\FIG{re-do these stretches on deconvolved/originals. To change the strength of the stretch, I simply divided the upper bound (you called it "vmax") by 2 and 10.}
+\TODO{Right column should be deconvolved image}
 
-\includepdf[pages={1,2}]{../../Data/Deconvolved/CFHTLS_03_g_Deconvolved_noisecompare.pdf}
-
+\begin{figure}
+	\centering
+	\def\width{0.15}
+	\includegraphics[width=\width\linewidth]{../../Data/CFHTLS_06/CFHTLS_06_r/CFHTLS_06_r_sci}	
+	\includegraphics[width=\width\linewidth]{../../Data/CFHTLS_06/CFHTLS_06_r/CFHTLS_06_r_sci}\\\vspace{1mm}
+	\includegraphics[width=\width\linewidth]{../../Data/CFHTLS_06/CFHTLS_06_r/Enhanced_Original/CFHTLS_06_r_sci_rescaled2.png}
+	\includegraphics[width=\width\linewidth]{../../Data/CFHTLS_06/CFHTLS_06_r/Enhanced_Original/CFHTLS_06_r_sci_rescaled2.png}\\\vspace{1mm}
+	\includegraphics[width=\width\linewidth]{../../Data/CFHTLS_06/CFHTLS_06_r/Enhanced_Original/CFHTLS_06_r_sci_rescaled.png}
+	\includegraphics[width=\width\linewidth]{../../Data/CFHTLS_06/CFHTLS_06_r/Enhanced_Original/CFHTLS_06_r_sci_rescaled.png}\\\vspace{1mm}
+	\includegraphics[width=\width\linewidth]{../../Data/CFHTLS_06/CFHTLS_06_r/Enhanced_Original/CFHTLS_06_r_sci_rescaled02.png}
+	\includegraphics[width=\width\linewidth]{../../Data/CFHTLS_06/CFHTLS_06_r/Enhanced_Original/CFHTLS_06_r_sci_rescaled02.png}\\\vspace{1mm}
+	\includegraphics[width=\width\linewidth]{../../Data/CFHTLS_06/CFHTLS_06_r/Enhanced_Original/CFHTLS_06_r_sci_rescaled010.png}
+	\includegraphics[width=\width\linewidth]{../../Data/CFHTLS_06/CFHTLS_06_r/Enhanced_Original/CFHTLS_06_r_sci_rescaled010.png}\\\vspace{1mm}
+	\caption{The effects of a linear stretch on the appearance of the image CFHTLS\_06\_r. The stretch gets more severe as you go down, starting with the unstretched image. The image in the left column is the original data, while the right column is the deconvolved image.}
+	\label{fig:deconvolution_noise}
+\end{figure}
 
 
 
@@ -921,6 +1010,9 @@ But before troubling astonomers or members of the public with such requests, we 
 \end{itemize}
 
 
+
+
+\begin{comment}
 \newpage
 %%=================================================
 %% TO DO
@@ -962,7 +1054,7 @@ objects of interest, the number of inspectors who identify feature X, etc etc et
 
 	\item Prior on pixel values \ra Lagrange term added to the summed squared residuals.
 \end{itemize}
-
+\end{comment}
 
 
 
