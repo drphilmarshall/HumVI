@@ -19,7 +19,7 @@ foreach Q ( 0.01 0.10 1.00 10.0 100. )
     set pngfile = "tests/Q-alpha/Q${Qs}_alpha${as}.png"
     set logfile = $pngfile:r.log
     
-    ./compose.py -v -l -p $pars -s $scales \
+    ./compose.py -v -l -x white -p $pars -s $scales \
         -o $pngfile \
         examples/CFHTLS_27_i_sci.fits \
         examples/CFHTLS_27_r_sci.fits \
@@ -32,7 +32,7 @@ foreach Q ( 0.01 0.10 1.00 10.0 100. )
   end
 end 
    
-gallery.pl -x 5 -y 5 -pdf $pngfiles \
+gallery.pl -t -x 5 -y 5 -pdf $pngfiles \
   -o tests/Q-alpha/CFHTLS_27_Q-alpha_gallery.pdf
 
 # Q doesn't make a great deal of difference, not as much as alpha. It does

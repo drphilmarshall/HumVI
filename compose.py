@@ -189,8 +189,11 @@ def compose(argv):
 
       if LuptonStretch:
 
-            if vb: print "Nonlinearity parameters Q,alpha:",Q,alpha
-
+            if vb: 
+              print "Stretch parameters Q,alpha:",Q,alpha
+              print "At low surface brightness levels, the channel images are further rescaled by alpha"
+              print "Nonlinearity sets in at about 1/Q*alpha in the scaled intensity image:",1.0/(Q*alpha)
+               
             # Compute total intensity image and the arcsinh of it:
             I = humvi.lupton_intensity(red.image,green.image,blue.image,type='sum')
             stretch = humvi.lupton_stretch(I,Q,alpha)
