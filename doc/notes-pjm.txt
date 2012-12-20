@@ -1,0 +1,162 @@
+# 2012-12-19 (Wednesday) 18:21 PST
+
+# Experimenting with optimizing scales, Q and alpha. 
+# Choose one set of scales.
+
+# Loop over 5x5 grid of Q, alpha:
+
+mkdir -p tests/Q-alpha
+set pngfiles = ()
+set scales = "0.9,1.3,2.0"
+
+foreach Q ( 0.01 0.10 1.00 10.0 100. ) 
+  foreach alpha ( 0.01 0.03 0.10 0.30 1.00 )
+  
+    set pars = "${Q},${alpha}"
+    
+    set Qs = `echo $Q | sed s/'\.'/'p'/g`
+    set as = `echo $alpha | sed s/'\.'/'p'/g`
+    set pngfile = "tests/Q-alpha/Q${Qs}_alpha${as}.png"
+    set logfile = $pngfile:r.log
+    
+    ./compose.py -v -l -p $pars -s $scales \
+        -o $pngfile \
+        examples/CFHTLS_27_i_sci.fits \
+        examples/CFHTLS_27_r_sci.fits \
+        examples/CFHTLS_27_g_sci.fits > $logfile
+        
+    du -sch $pngfile
+    
+    set pngfiles = ( $pngfiles $pngfile)
+  
+  end
+end 
+   
+gallery.pl -x 5 -y 5 -pdf $pngfiles \
+  -o tests/Q-alpha/CFHTLS_27_Q-alpha_gallery.pdf
+
+# Q doesn't make a great deal of difference, not as much as alpha. It does
+# change visibility of arc though.
+# Set to 1.0 for now. 
+
+# Now compare saturate to white, with color sat:
+
+mkdir -p tests/saturation
+set pngfiles = ()
+set scales = "0.9,1.3,2.0"
+set Q = 1.0
+
+foreach saturation ( white color ) 
+  foreach alpha ( 0.01 0.03 0.10 0.30 1.00 )
+  
+    set pars = "${Q},${alpha}"
+    
+    set as = `echo $alpha | sed s/'\.'/'p'/g`
+    set pngfile = "tests/saturation/${saturation}_alpha${as}.png"
+    set logfile = $pngfile:r.log
+    
+    ./compose.py -v -l -x $saturation -p $pars -s $scales \
+        -o $pngfile \
+        examples/CFHTLS_27_i_sci.fits \
+        examples/CFHTLS_27_r_sci.fits \
+        examples/CFHTLS_27_g_sci.fits > $logfile
+        
+    du -sch $pngfile
+    
+    set pngfiles = ( $pngfiles $pngfile)
+  
+  end
+end 
+   
+gallery.pl -t -x 5 -y 2 -pdf $pngfiles \
+  -o tests/saturation/CFHTLS_27_saturation_gallery.pdf
+
+# OK, saturate to color is more informative, but are central red points
+# distracting? Might be better to choose white.
+
+# Loop over 5x5 grid of Q, alpha:
+
+mkdir -p tests/offset-alpha
+set pngfiles = ()
+set scales = "0.9,1.3,2.0"
+set Q = 1.0
+set saturation = "white"
+
+foreach offset ( -0.2 -0.1 0.0 0.1 0.2 ) 
+  foreach alpha ( 0.01 0.03 0.10 0.30 1.00 )
+  
+    set pars = "${Q},${alpha}"
+    
+    set os = `echo $offset | sed s/'\.'/'p'/g`
+    set as = `echo $alpha | sed s/'\.'/'p'/g`
+    set pngfile = "tests/offset-alpha/off${os}_alpha${as}.png"
+    set logfile = $pngfile:r.log
+    
+    ./compose.py -v -l -x $saturation -z $offset -p $pars -s $scales \
+        -o $pngfile \
+        examples/CFHTLS_27_i_sci.fits \
+        examples/CFHTLS_27_r_sci.fits \
+        examples/CFHTLS_27_g_sci.fits > $logfile
+        
+    du -sch $pngfile
+    
+    set pngfiles = ( $pngfiles $pngfile)
+  
+  end
+end 
+   
+gallery.pl -t -x 5 -y 5 -pdf $pngfiles \
+  -o tests/offset-alpha/CFHTLS_27_offset-alpha_gallery.pdf
+
+# OK, zero maybe looks nicest...
+
+# Now test color scales!
+
+mkdir -p tests/scales
+set pngfiles = ()
+set Q = 1.0
+set alpha = 0.03
+set pars = "${Q},${alpha}"
+set offset = 0.0
+set saturation = "white"
+
+set gscale = "1.0"
+
+foreach rscale ( 0.6 0.8 1.0 1.2 1.4 ) 
+  foreach bscale ( 0.6 0.8 1.0 1.2 1.4 )
+  
+    set scales = "$rscale,$gscale,$bscale"
+    set ss = `echo $scales | sed s/'\.'/'p'/g | sed s/'\,'/'x'/g`
+    set pngfile = "tests/scales/scales${ss}.png"
+    set logfile = $pngfile:r.log
+    
+    ./compose.py -v -l -x $saturation -z $offset -p $pars -s $scales \
+        -o $pngfile \
+        examples/CFHTLS_27_i_sci.fits \
+        examples/CFHTLS_27_r_sci.fits \
+        examples/CFHTLS_27_g_sci.fits > $logfile
+        
+    du -sch $pngfile
+    
+    set pngfiles = ( $pngfiles $pngfile)
+  
+  end
+end 
+   
+gallery.pl -t -x 5 -y 5 -pdf $pngfiles \
+  -o tests/scales/CFHTLS_27_scales_gallery.pdf
+
+# How much value is there in being able to change the r and b scale? Not too
+# much... 0.8,1.0,1.0 works well
+
+# Scales normalized to: 0.857142857143 1.07142857143 1.07142857143
+
+# OK: current standard setup (optimized for example 
+#   CFHTLS data from Anupreeta More):
+# 
+# set Q = 1.0
+# set alpha = 0.03
+# set scales = 0.8,1.0,1.0
+# set offset = 0.0
+# set saturation = white
+

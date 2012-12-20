@@ -12,15 +12,36 @@ import numpy,Image
 
 # ======================================================================
 
-def lupton_intensity(r,g,b):
+def lupton_intensity(r,g,b,type='sum'):
+ 
+  if type == 'sum':
+    return (r+g+b) + 1e-10
 
-  return (r+g+b)/3.0 + 1e-20
+  elif type == 'rms':
+    return numpy.sqrt(r*r+g*g+b*b) + 1e-10
 
 # ----------------------------------------------------------------------
 
-def lupton_stretch(image,mean,Q,alpha):
+def lupton_stretch(I,Q,alpha):
  
-  return image*numpy.arcsinh(alpha*Q*mean) / (Q*mean)
+  return numpy.arcsinh(alpha*Q*I) / (Q*I)
+
+# ----------------------------------------------------------------------
+# Clip high values to box:
+
+def lupton_saturate(r,g,b,threshold):
+ 
+  x = numpy.dstack((r,g,b))
+  
+  # Highest pixel-value at given position
+  maxpix = numpy.max(x, axis=-1)
+  maxpix[maxpix<1.0] = 1.0
+		
+  rr = r/maxpix
+  gg = g/maxpix
+  bb = b/maxpix
+ 
+  return rr,gg,bb
 
 # ======================================================================
 # Testing:
