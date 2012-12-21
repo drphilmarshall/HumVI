@@ -98,7 +98,7 @@ rms and brightest pixel
 value $10^4$. If we want a pixel with value 3 times the rms to have
 normalized value 0.1 in each channel of 
 the final image, then we need $X(9)=1/30$ ($I\approx9$ if each channel image
-pixel value is about $3-\sigma$). We'd
+pixel value is about $3\sigma$). We'd
 like this to still be in the linear regime, so we need $9 \alpha Q \ll 1$,
 and also $\alpha \approx 1/30 \approx 0.03$. Combining these two requirements,
 we find that we need $Q
@@ -135,12 +135,12 @@ zero. This leads to a large number of black pixels (approximately half of
 them!) and a strong impression of dark sky. If we want to retain the
 information that those negative pixels contain (about the noise level), we can
 add an offset $\delta$ to each scaled and stretched channel image, such that
-pixels with value $-delta$ appear black in the final composite. This has the
+pixels with value $-\delta$ appear black in the final composite. This has the
 effect of making the blank regions of the image appear dark gray instead of
 black. Choosing $\delta$ to be negative has the opposite effect, making the
 sky look blacker than black... Figure~\ref{fig:offset} shows the effect of
 various offset values on the appearance of the test image from
-Figure~\ref{fig:scaling}. We find that actually an offset of zero is a good
+Figure~\ref{fig:stretch}. We find that actually an offset of zero is a good
 compromise between ``seeing the noise'' and achieving a nice dark background
 against which low surface brightness features can be seen.
 
@@ -156,7 +156,7 @@ through the set $\{-0.2,-0.1,0.0,0.1,0.2\}$.}
 
 At the bright end we have a different choice to make: what to do in pixels
 whose values are greater than 1 in any channel? In Figures~\ref{fig:stretch}
-and~\ref{fig:offset} we simply snapped thes pixel values to one in that
+and~\ref{fig:offset} we simply snapped these pixel values to one in that
 channel, a procedure that leads to ``saturation to white'' in the case where
 all three channel pixel values exceed 1. An alternative is to snap the highest
 pixel value of an RGB triplet to 1, and then rescale the other two so as to
@@ -213,7 +213,7 @@ through the same set. $Q=1.0$ and $\alpha = 0.03$.}
 
 
 \section{Conclusions}
-\label{sec:color}
+\label{sec:conclude}
 
 From these explorations we conclude:
 \begin{itemize}
@@ -235,6 +235,12 @@ search.
 against some of the artifacts highlighted by the saturate to color algorithm.
 \end{itemize}
 
+Further work should include allowing unnormalized scales, one per image, to
+allow for images with different units, as concluded above. Then we should
+enable combinations of $N > 3$ images, breaking the one image per channel
+paradigm set up here. Input images will need to be scaled first, then combined
+into channel images, and then stretched as described in
+Section~\ref{sec:stretch}.
 
 \section{References}
 

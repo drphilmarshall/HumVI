@@ -1,3 +1,4 @@
+# ============================================================================
 # 2012-12-19 (Wednesday) 18:21 PST
 
 # Experimenting with optimizing scales, Q and alpha. 
@@ -160,3 +161,4 @@ gallery.pl -t -x 5 -y 5 -pdf $pngfiles \
 # set offset = 0.0
 # set saturation = white
 
+# ============================================================================

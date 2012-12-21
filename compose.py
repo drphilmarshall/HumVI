@@ -16,8 +16,8 @@ def compose(argv):
         compose.py
 
       PURPOSE
-        Make a color composite JPG image from 3 FITS images, using the Lupton
-        algorithm.
+        Make a color composite PNG image from 3 FITS images, using the Lupton
+        algorithm. Part of the HumVI package.
 
       COMMENTS
         Reads filter name and zero point from header and tries to set scales
@@ -63,7 +63,15 @@ def compose(argv):
 
       BUGS
 
-      - Need to specify outfile name
+      - Renormalized scales will not be appropriate if one image is in very 
+        different units to another, or if images are in counts, not counts per 
+        second or AB maggies. 
+
+      - Code currently assumes one file per channel, whereas we might want to 
+        use N>3 images
+        in combination. N scales would then be required, and the image to 
+        channel transformation performed after scaling but before stretching.
+        Masking would need to be done at this point too. 
 
       HISTORY
         2012-05-11    started Marshall (Oxford)
@@ -148,6 +156,9 @@ def compose(argv):
       ## -------------------------------------------------------------------
       ## Read in images, set and apply scales etc:
 
+      # BUG: this code assumes one file one channel, whereas we would like 
+      # to be able to make composites based on N bands.
+
       red = humvi.channel(rfile)
       green = humvi.channel(gfile)
       blue = humvi.channel(bfile)
@@ -162,6 +173,10 @@ def compose(argv):
         blue.subtract_background()
 
       # Set scales:
+      # BUG: each image should be given a scale - need to work with 
+      # image stacks, not red, green, blue. rgb can come after conversion to
+      # channels.
+      
       if scales == 'Auto':
         red.set_scale()
         green.set_scale()
@@ -184,8 +199,13 @@ def compose(argv):
       green.apply_scale()
       blue.apply_scale()
 
-      ## - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-      ## Lupton code (default):
+      # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+      # Combine N images into three channels:
+      
+      # TO BE WRITTEN!
+      
+      # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+      # Stretch images to cope with high dynamic range:
 
       if LuptonStretch:
 
@@ -206,6 +226,10 @@ def compose(argv):
             if mask:
               # Mask problem areas - exact zeros or very negative patches should 
               # be set to zero.
+              
+              # BUG: this should have been done after scaling but before conversion 
+              # to channels, as its the individual images that have problems...
+              
               r,g,b = humvi.pjm_mask(r,g,b,masklevel)
 
             # Offset the stretched images to make zero level appear dark gray.

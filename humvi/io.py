@@ -14,6 +14,10 @@ vb = 0
 
 # ======================================================================
 
+# BUG: This code assumes one file one channel, whereas we want to make
+# composites based on N images... Class should be image, not channel.
+# RGB channels should be constructed *after* scaling but *before* stretching
+
 class channel:
 
    def __init__(self,fitsfile):
@@ -52,8 +56,8 @@ class channel:
       return
    
    def subtract_background(self):
-			self.image -= numpy.median(self.image)
-			return
+      self.image -= numpy.median(self.image)
+      return
       
 # ======================================================================
 
