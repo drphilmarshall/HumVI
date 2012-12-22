@@ -68,7 +68,7 @@
 
 
 \begin{abstract}
-There is much scope in the future for ``crowd-sourcing'' the analysis of astronomical images. But the images will have to be presented in an intuitive and clear way so that non-experts have a shot at making an informed and useful contribution. In a summer project guided by David Hogg and Phil Marshall, I attempted to satisfy this need by devising a pipeline for the production of deconvolved RGB images from photometric telescope data. Though the project met with moderate success on many fronts, I encountered a computational problem with a key step in the deconvolution process; this impeded overall progress. The issue endures, and though it was possible to focus to some extent on other aspects of the project, it was not possible to achieve the stated goals. This notwithstanding, the architecture and principles of the project, as well as the results that were obtained, are discussed.
+There is much scope in the future for ``crowd-sourcing'' the analysis of astronomical images: asking interested members of the public to devote time to classifying and describing them. For such a programme to work, the images must be presented in an intuitive and clear way so that non-experts have a shot at making an informed and useful contribution. In a summer project guided by David Hogg and Phil Marshall, I began to address this need by devising a pipeline for the production of deconvolved RGB images from photometric telescope data. Though the project met with moderate success on many fronts, I encountered a computational problem at a key step in the deconvolution process, which impeded overall progress. The issue endures, and though it was possible to focus to some extent on other aspects of the project, it was not possible to achieve the stated goals. This notwithstanding, the architecture and principles of the project, as well as the results that have been obtained so far, are discussed.
 \end{abstract}
 
 
@@ -106,7 +106,7 @@ incidence of false detections.
 One way to increase the frequency with which discoveries are made  could be to
 employ a larger number of experienced image viewers to look at images.  This
 approach is being taken by ``citizen science'' projects such as Galaxy Zoo
-(citation required). In the Galaxy Zoo system, color composite
+(citation required). In the Galaxy Zoo system, colour composite
 images of galaxies are presented to large numbers of viewers, who carry out
 visual morphological studies guided by a short questionnaire. The viewers have
 a wide range of experience with astronomical images, and the majority of
@@ -116,9 +116,9 @@ data-driven: their ability to spot something new depends partly on their
 pre-conceived notions of what galaxies look like, but to a greater extent it
 will depend on the images they have seen in the system before. Given an
 inspection Zoo and a user base like this,  how should we prepare and present
-the color images of galaxies, to increase the probability of an interesting
+the colour images of galaxies, to increase the probability of an interesting
 new feature being detected? This is the question we seek to answer in this
-paper, taking as our archetypal interesting features the faint arcs caused by
+project, taking as our archetypal interesting features the faint arcs caused by
 gravitational lensing. 
 
 Gravitational lenses enable a wide range of science projects, providing a
@@ -153,8 +153,8 @@ reconstructing a higher quality image. There is a significant body of
 literature on this image restoration process in astronomy \citep[e.g.][]{Ric72, N+N82, S+B84, P+P93, MCS98}. We might
 expect algorithms like this to be important for synoptic surveys, whose
 resolution and depth varies from image to image, and from filter to filter in
-a partiular field of view. Combining raw images into a color composite will
-produce colored artefacts due to the mis-matched resolution in the red, green
+a partiular field of view. Combining raw images into a colour composite will
+produce coloured artefacts due to the mis-matched resolution in the red, green
 and blue channels; while the resulting composite will have different (mean)
 resolution than other elsewhere on the sky, leading to an inhomogeneity that
 will hinder the development of the viewers' internal feature model as they
@@ -165,13 +165,13 @@ create more problems than the deconvolution solves, reducing the probability
 of a discovery being made.  An experimental test of the sensitivity with which
 an image set enables discovery is required.
 
-In this paper we investigate a simple model-based deconvolution scheme for
-resolution matching, combined with a standardised image scaling and stretch,
-producing homogenized sets of color composites for inspection and then testing
-their sensitivity for lensed feature detection by viewers in the Galaxy Zoo.
-Using a set of $N$ realistic simulated test images for the XXX survey 
-containing faint lensed features, we define a set of metrics that quantify
-discovery sensitivity based on a test group of viewers responses, and 
+In this project, we investigated a simple model-based deconvolution scheme for
+resolution matching, combined with a standardised image scaling and stretch, with the aim of
+producing homogenised sets of colour composites for inspection and testing
+(for lensed feature detection) by viewers in the Galaxy Zoo.
+Using a set of realistic simulated test images for some survey 
+containing faint lensed features, we would wish, in future, to define a set of metrics that quantify
+discovery sensitivity based on a test group of viewers' responses, and 
 ask the following questions:
 
 \begin{itemize}
@@ -180,10 +180,10 @@ ask the following questions:
 resolution-matched composite images introduce significant colored artefacts?
 
 	\item What target PSF-width should be used in order to
-maximise discovery sensitivity in the color composite images? How does this
+maximise discovery sensitivity in the colour composite images? How does this
 relate to the input images' resolution?
 
-	\item What algorithm for choosing the color composite images' stretch and
+	\item What algorithm for choosing the colour composite images' stretch and
 scaling should be used, to to maximise discovery sensitivity? 
 
 	\item Is there significant scatter in viewers' preferences regarding image
@@ -195,7 +195,7 @@ justified?
 While we will focus on lensed features as our discovery targets, and the CFHT legacy
 survey, we hope that our results will be of interest to the astronomical
 community in general, and in particular to anyone who wants to see what they
-have found in the object catalog database of a large synoptic imaging survey.
+have found in the object catalogue database of a large synoptic imaging survey.
 
 In the following two subsections, we discuss the origins of blurriness in telescope images (\ref{sec:psf}) and highlight some issues regarding the combination of band-pass data (\ref{sec:bands}). Then in section~\ref{sec:deconvolution} we outline a scheme for mitigating image bluriness. In section~\ref{sec:colour} we change tack and discuss a separate issue -- that of combining filtered images into coloured composites. These two strands are brought together in section~\ref{sec:combine}.
 
@@ -472,11 +472,11 @@ Once we have constructed an appropriate kernel matrix, we solve (using \texttt{s
 
 \paragraph{Solving an overconstrained problem.} If we want to solve the matrix equation~\ref{eqn:simple_deconvolve} and get an unambiguous answer, we need the system to be \emph{overdetermined} -- i.e. the inferred scene image-vector $\vec b$ should have fewer elements than the data image-vector $\vec a$. This goes right against the arguments raised in section~\ref{sec:shave}, which considers information-transduction in the convolution procedure.
 
-How to resolve the conflict? Notice that in violating the section~\ref{sec:shave} mandate, we will introduce problems on the inferred image's boundaries\footnote{The problem will rach a full kernel-width into the recovered image, though the severity diminishes the further in you go.}. We can live with this -- especially if we are considering large images which have comparatively little information on the boundary. On the other hand, solving an underdetermined system is inherently unstable. So in order to arrive at a robust solution for $\vec b$, we should sacrifice our faithfullness to the convolution procedure.
+How to resolve the conflict? Notice that in violating the section~\ref{sec:shave} mandate, we will introduce problems on the inferred image's boundaries\footnote{The problem will reach a full kernel-width into the recovered image, though the severity diminishes the further in you go.}. We can live with this -- especially if we are considering large images which have comparatively little information on the boundary. On the other hand, solving an underdetermined system is inherently unstable. So in order to arrive at a robust solution for $\vec b$, we should sacrifice our faithfullness to the convolution procedure.
 
 Now there are two possibilities: (i) ``pad'' the data image $\mathcal A$ with zeroes; this will allow us to maintain the size of the inferred image. (ii) Keep $\mathcal A$ the same and accept a smaller inferred image $\mathcal B$. (In both cases, the kernel matrix $\mathbf K$ is taller than it is wide.) The choice isn't particularly compelling -- in (i) we are introducing spurious information but this is confined to the edges; in (ii) we maintain the purity of our method, but may introduce problems later on when we try to compare the images. Uncharacteristically, I'll opt for (i), the simpler-but-corrupt choice.
 
-We should choose the padding so that the deconvolved image has the same size as the original data image. This means making a border of black pixels with total width ahnd height equal to the width and height of the kernel image. The changes to how we construct our kernel matrix are less trivial, and require careful thought and much picture-drawing (often it is hard to visualise how image manipulations translate into linear algebra operations). The kernel matrix corresponding to a 2D Gaussian kernel is shown in figure~\ref{fig:kernmat_pad}.
+We should choose the padding so that the deconvolved image has the same size as the original data image. This means making a border of black pixels with total width and height equal to the width and height of the kernel image. The changes to how we construct our kernel matrix are less trivial, and require careful thought and much picture-drawing (often it is hard to visualise how image manipulations translate into linear algebra operations). The kernel matrix corresponding to a 2D Gaussian kernel is shown in figure~\ref{fig:kernmat_pad}.
 
 \begin{figure}[h]
 	\centering
@@ -489,7 +489,7 @@ We should choose the padding so that the deconvolved image has the same size as 
 	\label{fig:kernmat_pad}
 \end{figure}
 
-The kernel matrix has some conspicuous gaps. For the unpadded case, this comed from the kernel overlapping the image boundaries. For the padded case, we also need to factor in the fact that there are many extra zeroes for which we must acconut. It should be clear from the shapes of the images in figure~\ref{fig:kernmat_pad} that the unpadded matrix is underconstrained and the padded matrix is overconstrained.
+The kernel matrix has some conspicuous gaps. For the unpadded case, this comes from the kernel overlapping the image boundaries. For the padded case, we also need to consider the fact that there are many extra zeroes to account for. It should be clear from the shapes of the images in figure~\ref{fig:kernmat_pad} that the unpadded matrix is underconstrained and the padded matrix is overconstrained.
 
 Note that all the black space in these matrices means we should be able to use sparse-matrix numerical packages to speed up computations.
 
@@ -842,7 +842,7 @@ Figure~\ref{fig:linear_stretch} shows the results of the procedure performed on 
 
 [Note that this section will only be complete once the deconvolution code is up to scratch. The images which purport to be deconvolved are nothing of the sort. They are just placeholders.]
 
-We use stretches to make images more readily interpretable, and we will perform such procedures on original and deconvolved images alike. Since the overarching framework of this project is about pattern recognition, it is necessary to analyse the effects of such manipulations on the noise properties of the image. Below we show stretches of increasing severity on an original image and its deconvolved counterpart.
+We use stretches to make images more readily interpretable, and we will perform such procedures on original and deconvolved images alike. Since the overarching framework of this project is about pattern recognition, it is necessary to analyse the effects of such manipulations on the noise properties of the image. In figure~\vref{fig:deconvolution_noise} we show stretches of increasing severity on an original image and its deconvolved counterpart.
 
 \begin{figure}
 	\centering
