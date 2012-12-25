@@ -153,8 +153,7 @@ def make_image(image,return_jpeg=True,**kwargs):
 
     if kwargs.has_key("scale"):
         if kwargs["scale"]=="auto":
-            # set scale
-            
+            # set scale            
             scale=find_autoscale(image, autopercentile, lum=False)
             print "autoscaling:"
             #raise RuntimeError, `scale `

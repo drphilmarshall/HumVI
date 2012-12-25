@@ -74,7 +74,7 @@ def compose(argv):
 	vb = False
 
 	png = False
-	outfile = os.path.dirname(args[0])+"/output.png"
+	outfile = os.path.dirname(args[0])+"/composed"
 
 	pars = '10,0.04'
 	scales = 'Auto'
@@ -94,11 +94,15 @@ def compose(argv):
 	    elif o in ("-o","--output"):
 	        outfile = a
 	    elif o in ("-l","--lupton"):
-	        LuptonStretch=True
-	        if vb:	print "Lupton method selected."
+					LuptonStretch=True
+					outfile += "_lupton"
+					if vb:	print "Lupton method selected."
 	    else:
 	        assert False, "Unhandled option"
-
+	
+	## Add info to outfile
+	outfile += "_"+pars+"_"+scales+".png"
+	
 	## Check for datafiles in array args:
 
 	if len(args) == 3:
@@ -152,7 +156,7 @@ def compose(argv):
 	  
 	if vb:	print 'Scales set to:',red.scale,green.scale,blue.scale
 
-	# Scale images - only do once:
+	## Scale images - only do once:
 	red.apply_scale()
 	green.apply_scale()
 	blue.apply_scale()
@@ -174,9 +178,6 @@ def compose(argv):
 
 		image = humvi.pack_up(r,g,b) 
 		image.save(outfile)
-		if vb: print "Image saved to:",outfile
-
-		return
 
 	## -------------------------------------------------------------------
 	## Wherry scaling -- default
@@ -188,7 +189,9 @@ def compose(argv):
 				## Note that scaling has been done already so scale should be None
 		humvi.nw_rgb_make(red,green,blue, outfile, None, Q*alpha)
 
-		return	## Redundant but keep for clarity
+	
+	if vb: print "Image saved to:",outfile
+	return
 	
 	
 # ======================================================================

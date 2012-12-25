@@ -226,10 +226,10 @@ def nw_arsinh(arrstk, nonlin=3.0):
 		return arrstk
 	
 	## Add up all pixels to get broadband intensity
-	pixtot = arrstk.sum(axis=-1)
-	pixtot[pixtot==0.0] = 1.0
+	pixavg = arrstk.sum(axis=-1)/3
+	pixavg[pixavg==0.0] += 1.0e-15
 	## Arsinh factor
-	fac = numpy.arcsinh(pixtot*nonlin)/(pixtot*nonlin)
+	fac = numpy.arcsinh(pixavg*nonlin)/(pixavg*nonlin)
 	
 	## Multiply each array in stack	by factor
 	for i in range (3):
