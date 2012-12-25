@@ -49,7 +49,9 @@ def nw_rgb_make(Rim,Gim,Bim,\
 	## If given channel instances from fits2colorjpg
 	elif isinstance(Rim, io_pjm.channel):
 		## Need to flip the images
-		R = Rim.image[::-1,:]; G = Gim.image[::-1,:]; B = Bim.image[::-1,:]
+		R = Rim.image[::-1,:]
+		G = Gim.image[::-1,:]
+		B = Bim.image[::-1,:]
 		imagestack = numpy.dstack((R,G,B))
 		del(R,G,B)
 	else:
@@ -115,8 +117,9 @@ def nw_rgb_make(Rim,Gim,Bim,\
 
 	## Write to JPEG
 	
+	
 	"""
-	## If we don't trust SciPy to convert image to PNG correctly
+      ## If we don't trust SciPy to convert image to PNG correctly
 	imagestack -= imagestack.min()
 	imagestack /= imagestack.max()	
 	#imagestack = numpy.clip(imagestack, 0,1)
