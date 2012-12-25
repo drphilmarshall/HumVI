@@ -118,11 +118,11 @@ def compose(argv):
               outfile = a
           elif o in ("-b","--subtract-background"):
               backsub = True
-          elif o in ("-l","--lupton"):
+          elif o in ("-l","--lupton") or LuptonStretch is True:
               LuptonStretch = True
 							outfile += "_lupton"
 							if vb:	print "Lupton's method selected."
-          elif o in ("-w","--wherry"):
+          elif o in ("-w","--wherry") or LuptonStretch is False:
               LuptonStretch = False
 							outfile += "_wherry"
 							if vb:	print "Wherry's method selected."
