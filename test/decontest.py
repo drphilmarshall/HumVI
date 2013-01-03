@@ -83,6 +83,7 @@ def kerntest():
 ##-------------------------------------------------------------
 
 ## More complicated scenario
+## NOT WORKING
 
 def kerntest2():
 		
@@ -101,6 +102,17 @@ def kerntest2():
 
 	return None
 
+def stacktest():
+
+	scene_t  = DT.Gauss_2D(*[30, 4., 4., 15, 15, 1.])
+	kernel_t = DT.Gauss_2D(*[9, 3., 3., 4, 4, 1.])
+	data_t   = DT.Gauss_2D(*[30, 5., 5., 15, 15, 1.])
+	
+	
+	
+	
+	
+	
 ##============================================================
 
 ## Deconvolve one thing
@@ -166,19 +178,21 @@ def hoggtest():
 	
 	## Define true scene, kernel, and data
 		## Arguments are image size, width of Gaussian (x,y), centre (x,y), total flux
-	scene_t  = DT.Gauss_2D(*[30, 4., 4., 15, 15, 1.])
-	kernel_t = DT.Gauss_2D(*[9, 3., 3., 4, 4, 1.])
-	data_t   = DT.Gauss_2D(*[30, 5., 5., 15, 15, 1.])
+	scene_t  = DT.Gauss_2D(*[31, 4., 4., 15, 15, 1.])
+	kernel_t = DT.Gauss_2D(*[11, 3., 3., 5, 5, 1.])
+	data_t   = DT.Gauss_2D(*[31, 5., 5., 15, 15, 1.])
 	scipy.misc.imsave("hoggtest_scene_true.png", scene_t)
 	scipy.misc.imsave("hoggtest_kernel_true.png", kernel_t)
 	scipy.misc.imsave("hoggtest_data_true.png", data_t)
+	
+	## Use code.
 	
 	## Data: convolve the scene with the kernel
 	data = scipy.signal.fftconvolve(scene_t, kernel_t, "same")
 	scipy.misc.imsave("hoggtest_data.png", data)
 	
 	## Kernel: data = scene * k --> kernel
-	kernel = DT.get_kernel(scene_t, data_t, [9,9], False)
+	kernel = DT.get_kernel(scene_t, data_t, [11,11], False)
 	scipy.misc.imsave("hoggtest_kernel.png",kernel)
 	
 	## Scene: data = scene * k --> scene
@@ -186,11 +200,11 @@ def hoggtest():
 	scipy.misc.imsave("hoggtest_scene.png",scene)
 	
 	## Moments
-	print DT.moments(scene)
-	print DT.moments(kernel)
-	print DT.moments(data)
+	#print DT.moments(scene)
+	#print DT.moments(kernel)
+	#print DT.moments(data)
 	
-	print "Total",round(time.time()-t0,3)
+	print "Total time:",round(time.time()-t0,3),"seconds."
 	
 	return	
 	

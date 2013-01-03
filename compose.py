@@ -62,7 +62,7 @@ def compose(argv):
 
 
       BUGS
-
+      
       - Renormalized scales will not be appropriate if one image is in very 
         different units to another, or if images are in counts, not counts per 
         second or AB maggies. 
@@ -72,6 +72,8 @@ def compose(argv):
         in combination. N scales would then be required, and the image to 
         channel transformation performed after scaling but before stretching.
         Masking would need to be done at this point too. 
+      
+      - Should cope with just two or even one input image file.
 
       HISTORY
         2012-05-11    started Marshall (Oxford)
@@ -93,7 +95,8 @@ def compose(argv):
       vb = False
 
       png = False
-      outfile = "output.png"
+      # outfile = os.path.dirname(args[0])+"/composed"
+      outfile = "composed.png"
 
       pars = '1,0.03'
       scales = 'Auto'
@@ -126,12 +129,20 @@ def compose(argv):
               outfile = a
           elif o in ("-b","--subtract-background"):
               backsub = True
-          elif o in ("-l","--lupton"):
+          elif o in ("-l","--lupton") or LuptonStretch is True:
               LuptonStretch = True
-          elif o in ("-w","--wherry"):
+              # outfile += "_lupton"
+              if vb:      print "Lupton's method selected."
+          elif o in ("-w","--wherry") or LuptonStretch is False:
               LuptonStretch = False
+              # outfile += "_wherry"
+              if vb:      print "Wherry's method selected."
           else:
               assert False, "Unhandled option"
+
+      ## Add info to outfile name
+      # outfile += "_"+pars+"_"+scales+".png"
+
 
       ## Check for datafiles in array args:
 
@@ -242,14 +253,11 @@ def compose(argv):
               # Q redefines scale?:
               threshold = 1.0
               r,g,b = humvi.lupton_saturate(r,g,b,threshold)
-            # Otheriwse saturate to white.
+            # Otherwise, saturate to white.
             
             # Package into a python Image, and write out to file:
             image = humvi.pack_up(r,g,b)
             image.save(outfile)
-            if vb: print "Image saved to:",outfile
-
-            return
 
       ## -------------------------------------------------------------------
       ## Wherry code:
@@ -261,10 +269,12 @@ def compose(argv):
                         ## Note that scaling has been done already so scale should be None
             humvi.nw_rgb_make(red,green,blue, outfile, None, Q*alpha)
 
-            return      ## Redundant but keep for clarity
+## ======================================================================
 
-
-# ======================================================================
+      if vb: print "Image saved to:",outfile
+      return
+			
+## ======================================================================
 
 if __name__ == '__main__':
   compose(sys.argv[1:])

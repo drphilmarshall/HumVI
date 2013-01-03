@@ -99,28 +99,25 @@ def main():
 ## Converts FITS images in subdirectories of argv[2] to PNG format
   ## argv[3] is string (e.g. "CFHTLS_")
 def FITStoPNG(args):
-  
   i=0 
   for f_img in file_seek(args[2], args[3]+"*.fits"):
-  
 		## Prepare destination directory
-		outdir=os.path.dirname(f_img)#+"/Enhanced_Original/" ## Needs to be commented when brightening
+		outdir=os.path.dirname(f_img)+"/Enhanced_Original/" ## Needs to be commented when brightening
 		if os.path.isdir(outdir)==False: os.mkdir(outdir)
-		
 		## Outfile name
 		p_img = outdir+"/"+os.path.basename(f_img)[:-5]+".png"
-		
 		## File conversion
-		os.system("ds9 "+f_img+" -minmax -colorbar no -saveimage png "+p_img+" -exit")
-		i+=1
-	
-	## Shave whitespace?
-	##
-	##
-		
+		#os.system("ds9 "+f_img+" -minmax -colorbar no -saveimage png "+p_img+" -exit")
+		try:
+			hdulist = pyfits.open(f_img)
+			scipy.misc.imsave(f_img[:-4]+"png", hdulist[0].data)
+			i+=1
+		except:
+			pass
   print "ImageScript.py: FITStoPNG: Converted",i,"files to png format."
   return
-
+	
+	
 ##============================================================
 
 ## Converts all .psf to .png in subdirectories of argv[2]
@@ -312,7 +309,7 @@ def stretch_plus(fits_original):
 def stretch(fits_original, vmin=None,vmax=None):
 	
 	## Prepare destination directory
-	outdir=os.path.dirname(fits_original)+"/"#Enhanced_Original/"
+	outdir=os.path.dirname(fits_original)+"/Enhanced_Original/"
 	if os.path.isdir(outdir)==False: os.mkdir(outdir)
 	
 	## Outfile name
