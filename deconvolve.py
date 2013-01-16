@@ -22,7 +22,7 @@ def main(argv):
 		1. Identify sources in image.
 		2. Estimate PSF for image.
 		3. Generate target PSF.
-		4. Find convolution kernel fot this target.
+		4. Find convolution kernel for this target.
 		5. Deconvolve original image with this kernel.
 
 	COMMENTS
