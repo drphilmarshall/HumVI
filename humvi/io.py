@@ -74,7 +74,10 @@ def extract_zeropoint(hdr):
 
    # Look for zero points:
    if origin == 'CFHT':
-     zpt = hdr['PHOT_C']
+     if hdr.has_key('PHOT_C'):
+         zpt = hdr['PHOT_C']
+     elif hdr.has_key('MZP_AB'):
+         zpt = hdr['MZP_AB']
    
    else:
      raise "Unrecognised origin: "+origin
