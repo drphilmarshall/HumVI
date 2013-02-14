@@ -9,7 +9,9 @@ Creates a composite colour image from sets of input FITS files, following the Ma
 
 Authors 
 -------
-Cato Sandford and Phil Marshall <dr.phil.marshall@gmail.com>
+Phil Marshall (Oxford) <dr.phil.marshall@gmail.com>
+Cato Sandford (NYU)
+Anupreeta More (IPMU)
 
 Date
 ----
@@ -35,3 +37,14 @@ Now I wish to combine the three new images.
 View the result:
 
 	display output.png
+
+Dependencies
+------------
+
+The composition script requires:
+* the Python Image Library (PIL) available from http://www.pythonware.com/products/pil/
+
+The dconvolution script requires:
+
+Both require:
+* numpy
