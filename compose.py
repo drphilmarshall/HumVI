@@ -1,14 +1,14 @@
 #!/usr/bin/env python
-## =====================================================================
+# =====================================================================
 
-## Globally useful modules:
+# Globally useful modules:
 
 import numpy
 import sys,getopt,Image
 import humvi
 import os
 
-## =====================================================================
+# =====================================================================
 
 def compose(argv):
     """
@@ -47,7 +47,7 @@ def compose(argv):
 
     OUTPUTS
       stdout      Useful information
-      outfile     Output plot in jpg or png format
+      outfile     Output plot in png format
 
 
     EXAMPLES
@@ -58,8 +58,11 @@ def compose(argv):
         examples/CFHTLS_27_r_sci.fits \
         examples/CFHTLS_27_g_sci.fits
 
-        python compose.py ../Data/test03/gDeconvolved_CFHTLS_03_i_sci_rescaled.fits ../Data/test03/gDeconvolved_CFHTLS_03_r_sci_rescaled.fits ../Data/test03/gDeconvolved_CFHTLS_03_g_sci_rescaled.fits
-
+        compose.py  -v -s 0.8,1.0,1.0 -z 0.0 -p 1.0,0.03 -m -1.0 \
+        -o examples/H1413+117_10x10arcsec_riz.png \
+        examples/H1413+117_10x10arcsec_55377.34051_z_sci.fits \
+        examples/H1413+117_10x10arcsec_55665.51546_i_sci.fits \
+        examples/H1413+117_10x10arcsec_55664.39704_r_sci.fits
 
     BUGS
 
@@ -81,28 +84,24 @@ def compose(argv):
       2012-12-19    defaults set for CFHTLS images Marshall (Adler)
     """
 
-    ## -------------------------------------------------------------------
+    # -------------------------------------------------------------------
 
     try:
-        opts, args = getopt.getopt(argv, "hvs:p:n:o:x:z:blwm:",\
-        ["help","verbose","png","scales","pars","output","saturate-to","offset","subtract-background","lupton","wherry","mask"])
+        opts, args = getopt.getopt(argv, "hvp:s:n:o:x:z:blwm:",\
+        ["help","verbose","scales","pars","output","saturate-to","offset","subtract-background","lupton","wherry","mask"])
     except getopt.GetoptError, err:
-        ## print help information and exit:
-        print str(err) ## will print something like "option -a not recognized"
+        # print help information and exit:
+        print str(err) # will print something like "option -a not recognized"
         print compose.__doc__
         return
 
     vb = False
 
-    png = False
-    # outfile = os.path.dirname(args[0])+"/composed"
-    outfile = "composed.png"
+    outfile = "color.png"
 
-    pars = '1,0.03'
+    pars = '1,0.04'
     scales = 'Auto'
     backsub = False
-
-    LuptonStretch = True
     saturation = 'white'
     offset = 0.0
     mask = False
@@ -129,22 +128,13 @@ def compose(argv):
             outfile = a
         elif o in ("-b","--subtract-background"):
             backsub = True
-        elif o in ("-l","--lupton") or LuptonStretch is True:
-            LuptonStretch = True
-            # outfile += "_lupton"
-            if vb:    print "Lupton's method selected."
-        elif o in ("-w","--wherry") or LuptonStretch is False:
-            LuptonStretch = False
-            # outfile += "_wherry"
-            if vb:    print "Wherry's method selected."
         else:
             assert False, "Unhandled option"
 
-    ## Add info to outfile name
-    # outfile += "_"+pars+"_"+scales+".png"
 
+    # Check for datafiles in array args:
 
-    ## Check for datafiles in array args:
+    print len(args)
 
     if len(args) == 3:
         rfile = args[0]
@@ -159,50 +149,51 @@ def compose(argv):
         print compose.__doc__
         return
 
-    ## Parse nonlinearity parameters:
+    # Parse nonlinearity parameters:
     Qs,alphas = pars.split(',')
     Q = float(Qs)
     alpha = float(alphas)
 
-    ## -------------------------------------------------------------------
-    ## Read in images, set and apply scales etc:
+    # -------------------------------------------------------------------
+    # Read in images, calibrated into flux units:
 
-    # BUG: this code assumes one file one channel, whereas we would like
-    # to be able to make composites based on N bands.
+    band3 = humvi.channel(rfile)
+    band2 = humvi.channel(gfile)
+    band1 = humvi.channel(bfile)
 
-    red = humvi.channel(rfile)
-    green = humvi.channel(gfile)
-    blue = humvi.channel(bfile)
-
-    ## Check shapes are equal:
-    humvi.check_image_shapes(red.image,green.image,blue.image)
+    # Check shapes are equal:
+    humvi.check_image_shapes(band1.image,band2.image,band3.image)
 
     # Subtract backgrounds (median, optional):
     if backsub:
-      red.subtract_background()
-      green.subtract_background()
-      blue.subtract_background()
+      band1.subtract_background()
+      band2.subtract_background()
+      band3.subtract_background()
 
-    # Set scales:
-    # BUG: each image should be given a scale - need to work with
-    # image stacks, not red, green, blue. rgb can come after conversion to
-    # channels.
+    # -------------------------------------------------------------------
+    
+    # BUG: as it stands, this code assumes one file one channel, whereas
+    # in practice we might like to be able to make composites based on 
+    # N bands. Need to overload + operator for channels? Calib etc will
+    # need altering as well as image.
+
+    red = band3
+    green = band2
+    blue = band1
+
+    # -------------------------------------------------------------------
+    # Set scales determining color balance in composite:
 
     if scales == 'Auto':
-        red.set_scale()
-        green.set_scale()
-        blue.set_scale()
-        rscale,gscale,bscale = humvi.normalize_scales(red.scale,green.scale,blue.scale)
+        rscale,gscale,bscale = 1.0,1.0,1.0
     else:
         x,y,z = scales.split(',')
-        rscale = float(x)
-        gscale = float(y)
-        bscale = float(z)
-        rscale,gscale,bscale = humvi.normalize_scales(rscale,gscale,bscale)
+        rscale,gscale,bscale = float(x),float(y),float(z)
+    
+    rscale,gscale,bscale = humvi.normalize_scales(rscale,gscale,bscale)
     red.set_scale(manually=rscale)
     green.set_scale(manually=gscale)
     blue.set_scale(manually=bscale)
-
     if vb: print 'Scales normalized to:',red.scale,green.scale,blue.scale
 
     # Scale images - only do once:
@@ -211,70 +202,53 @@ def compose(argv):
     blue.apply_scale()
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    # Combine N images into three channels:
-
-    # TO BE WRITTEN!
-
-    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     # Stretch images to cope with high dynamic range:
 
-    if LuptonStretch:
+    if vb:
+        print "Stretch parameters Q,alpha:",Q,alpha
+        print "At low surface brightness levels, the channel images are further rescaled by alpha"
+        print "Nonlinearity sets in at about 1/Q*alpha in the scaled intensity image:",1.0/(Q*alpha)
 
-        if vb:
-            print "Stretch parameters Q,alpha:",Q,alpha
-            print "At low surface brightness levels, the channel images are further rescaled by alpha"
-            print "Nonlinearity sets in at about 1/Q*alpha in the scaled intensity image:",1.0/(Q*alpha)
+    # Compute total intensity image and the arcsinh of it:
+    I = humvi.lupton_intensity(red.image,green.image,blue.image,type='sum')
+    stretch = humvi.lupton_stretch(I,Q,alpha)
 
-        # Compute total intensity image and the arcsinh of it:
-        I = humvi.lupton_intensity(red.image,green.image,blue.image,type='sum')
-        stretch = humvi.lupton_stretch(I,Q,alpha)
+    # Apply stretch to channel images:
+    r = stretch * red.image
+    g = stretch * green.image
+    b = stretch * blue.image
 
-        # Apply stretch to channel images:
-        r = stretch * red.image
-        g = stretch * green.image
-        b = stretch * blue.image
+    if mask:
+        # Mask problem areas - exact zeros or very negative patches should
+        # be set to zero.
 
-        if mask:
-            # Mask problem areas - exact zeros or very negative patches should
-            # be set to zero.
+        # BUG: this should have been done after scaling but before conversion
+        # to channels, as its the individual images that have problems...
 
-            # BUG: this should have been done after scaling but before conversion
-            # to channels, as its the individual images that have problems...
+        r,g,b = humvi.pjm_mask(r,g,b,masklevel)
 
-            r,g,b = humvi.pjm_mask(r,g,b,masklevel)
+    # Offset the stretched images to make zero level appear dark gray.
+    # Negative offset makes background more black...
+    r,g,b = humvi.pjm_offset(r,g,b,offset)
 
-        # Offset the stretched images to make zero level appear dark gray.
-        # Negative offset makes background more black...
-        r,g,b = humvi.pjm_offset(r,g,b,offset)
+    if saturation == 'color':
+        # Saturate to colour at some level - might as well be 1, since
+        # Q redefines scale?:
+        threshold = 1.0
+        r,g,b = humvi.lupton_saturate(r,g,b,threshold)
+    # Otherwise, saturate to white.
 
-        # This should really be a snap to box option...
-        if saturation == 'color':
-            # Saturate to colour at some level - might as well be 1, since
-            # Q redefines scale?:
-            threshold = 1.0
-            r,g,b = humvi.lupton_saturate(r,g,b,threshold)
-        # Otherwise, saturate to white.
+    # Package into a python Image, and write out to file:
+    image = humvi.pack_up(r,g,b)
+    image.save(outfile)
 
-        # Package into a python Image, and write out to file:
-        image = humvi.pack_up(r,g,b)
-        image.save(outfile)
 
-    ## -------------------------------------------------------------------
-    ## Wherry code:
-
-    else:
-
-        ## Arguments are (R,G,B, outfilename,scale,nonlinearity,\
-        ## yrebin,xrebin,origin,saturatetowhite,overlay,underlay,invert)
-                ## Note that scaling has been done already so scale should be None
-        humvi.nw_rgb_make(red,green,blue, outfile, None, Q*alpha)
-
-## ======================================================================
+# ======================================================================
 
     if vb: print "Image saved to:",outfile
     return
 
-## ======================================================================
+# ======================================================================
 
 if __name__ == '__main__':
     compose(sys.argv[1:])

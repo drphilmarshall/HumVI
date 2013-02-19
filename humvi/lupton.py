@@ -1,8 +1,11 @@
 # ======================================================================
 
 """
-Functions for implementing the Lupton algorithm for making color
-composite images.
+Functions for implementing the Wherry et al extension to the 
+Lupton et al algorithm for making color composite images.
+
+Phil Marshall, Winter 2013
+
 """
 
 # ======================================================================

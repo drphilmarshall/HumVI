@@ -14,7 +14,7 @@ vb = 0
 
 # ======================================================================
 
-# BUG: This code assumes one file one channel, whereas we want to make
+# BUG: This code implies one file one channel, whereas we want to make
 # composites based on N images... Class should be image, not channel.
 # RGB channels should be constructed *after* scaling but *before* stretching
 
@@ -24,31 +24,73 @@ class channel:
 
         # Read in image and header:
         hdulist = pyfits.open(fitsfile)
-        self.image = hdulist[0].data
-        self.hdr = hdulist[0].header
+        # self.hdr = hdulist[0].header
+        # self.image = hdulist[0].data
+        # Picking -1 header assumes we have 1 extension or PS1 (2 ext, image is last)
+        self.image = hdulist[-1].data
+        self.hdr = hdulist[-1].header
+        self.calibrate()
         hdulist.close()
 
         return
 
-    def set_scale(self,manually=False):
+    def calibrate(self):
+        
+        # Which telescope took these data?
+        self.get_origin()
+        
+        # Get zero point, exptime:
+        self.get_zeropoint()
+        self.get_exptime()
+        # Airmass? Gain?
 
+        # Compute calibration factor for image pixel values to 
+        # convert them into flux units. The 26 is chosen such that 
+        # Q = 1 gives a sensible image.
+        self.calib = (10**(self.zpt - 26.0)) / self.exptime
+        self.image *= self.calib
+        
+        return
+        
+    def get_origin(self):
+        if self.hdr.has_key('ORIGIN'):  
+            self.origin = self.hdr['ORIGIN']
+        else:
+            if self.hdr.has_key('PSCAMERA'):
+                self.origin = 'PS1'
+            else:
+                raise "Image is of unknown origin."
+        return
+
+    def get_zeropoint(self):
+        if self.origin == 'CFHT':
+            if self.hdr.has_key('PHOT_C'):
+                self.zpt = self.hdr['PHOT_C']
+            elif self.hdr.has_key('MZP_AB'):
+                self.zpt = self.hdr['MZP_AB']
+            else:
+                raise "No zpt header keywords found."    
+        elif self.origin == 'PS1':
+            self.zpt = self.hdr['HIERARCH FPA.ZP']
+        print self.zpt
+        return
+
+    def get_exptime(self):
+        # Here we assume that both CFHT and PS1 provide images with 
+        # pixel values in counts per second... CHECK THIS
+        if self.origin == 'CFHT':
+            self.exptime = 1.0    
+        elif self.origin == 'PS1':
+            # self.exptime = self.hdr['EXPTIME']
+            self.exptime = 1.0    
+        return
+
+
+    def set_scale(self,manually=False):
         if manually:
              self.scale = manually
-
         else:
-             # Get zero point and exptime:
-             self.zpt = extract_zeropoint(self.hdr)
-             self.exptime = self.hdr['EXPTIME']
-
-             # Extract filter and infer wavelength, telescope:
-             self.filter = self.hdr['filter']
-             self.wavelength = filter2wavelength(self.filter)
-
-             # Suggest scale for this image based on exptime and zpt:
-             # self.scale = numpy.sqrt(self.exptime)*10**(self.zpt + 2.5*numpy.log10(self.wavelength) - 26.0)
-             self.scale = 10**(self.zpt + 2.5*numpy.log10(self.wavelength) - 26.0)
-             # This will be some crazy large number, in general.
-
+             self.scale = 1.0
         return
 
     def apply_scale(self):
@@ -64,25 +106,6 @@ class channel:
 def normalize_scales(s1,s2,s3):
     mean = (s1 + s2 + s3)/3.0
     return s1/mean, s2/mean, s3/mean
-
-# ----------------------------------------------------------------------
-
-def extract_zeropoint(hdr):
-
-    # Where did the data come from?
-    origin = hdr['ORIGIN']
-
-    # Look for zero points:
-    if origin == 'CFHT':
-        if hdr.has_key('PHOT_C'):
-            zpt = hdr['PHOT_C']
-        elif hdr.has_key('MZP_AB'):
-            zpt = hdr['MZP_AB']
-
-    else:
-      raise "Unrecognised origin: "+origin
-
-    return zpt
 
 # ----------------------------------------------------------------------
 
@@ -116,8 +139,6 @@ def check_image_shapes(r,g,b):
         raise "Image arrays are of different shapes, exiting"
 
     return
-# ----------------------------------------------------------------------
-
 
 # ----------------------------------------------------------------------
 # Make an 8 bit integer image cube from three channels:
