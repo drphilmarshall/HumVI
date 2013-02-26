@@ -49,17 +49,27 @@ def compose(argv):
 
 
     EXAMPLES
-        compose.py  -v -s 2.0,1.5,1.0 -z 0.0 -p 2.0,0.03 -m -1.0 \
-        -o examples/CFHTLS_27_gri.png \
-        examples/CFHTLS_27_i_sci.fits \
-        examples/CFHTLS_27_r_sci.fits \
-        examples/CFHTLS_27_g_sci.fits
+    
+        CFHTLS:
+          compose.py  -v -s 2.0,1.5,1.0 -z 0.0 -p 2.0,0.03 -m -1.0 \
+          -o examples/CFHTLS_27_gri.png \
+          examples/CFHTLS_27_i_sci.fits \
+          examples/CFHTLS_27_r_sci.fits \
+          examples/CFHTLS_27_g_sci.fits
 
-        compose.py  -v -s 0.8,1.0,1.0 -z 0.0 -p 1.0,0.03 -m -1.0 \
-        -o examples/H1413+117_10x10arcsec_riz.png \
-        examples/H1413+117_10x10arcsec_55377.34051_z_sci.fits \
-        examples/H1413+117_10x10arcsec_55665.51546_i_sci.fits \
-        examples/H1413+117_10x10arcsec_55664.39704_r_sci.fits
+        PS1:
+          compose.py  -v -s 0.8,1.0,1.0 -z 0.0 -p 1.0,0.03 -m -1.0 \
+          -o examples/H1413+117_10x10arcsec_riz.png \
+          examples/H1413+117_10x10arcsec_55377.34051_z_sci.fits \
+          examples/H1413+117_10x10arcsec_55665.51546_i_sci.fits \
+          examples/H1413+117_10x10arcsec_55664.39704_r_sci.fits
+
+        DES:
+          compose.py -v -s 2.0,1.5,2.5 -z 0.0 -p 2.0,0.04 -m -1.0 \
+          -o bullet_gri.cropped.png \
+          bullet_i.10.cropped.fits \       
+          bullet_r.12.cropped.fits \
+          bullet_g.11.cropped.fits
 
     BUGS
 

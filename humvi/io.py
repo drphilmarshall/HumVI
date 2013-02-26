@@ -54,10 +54,15 @@ class channel:
         
     def get_origin(self):
         if self.hdr.has_key('ORIGIN'):  
-            self.origin = self.hdr['ORIGIN']
+            if self.hdr['ORIGIN'] == 'CFHT':
+                self.origin = 'CFHT'
+            else:
+                self.origin = 'DES'
         else:
             if self.hdr.has_key('PSCAMERA'):
                 self.origin = 'PS1'
+            elif self.hdr.has_key('FID_ZP'):
+                self.origin = 'DES'
             else:
                 raise "Image is of unknown origin."
         return
@@ -72,6 +77,8 @@ class channel:
                 raise "No zpt header keywords found."    
         elif self.origin == 'PS1':
             self.zpt = self.hdr['HIERARCH FPA.ZP']
+        elif self.origin == 'DES':
+            self.zpt = -self.hdr['FID_ZP']
         print self.zpt
         return
 
@@ -81,6 +88,9 @@ class channel:
         if self.origin == 'CFHT':
             self.exptime = 1.0    
         elif self.origin == 'PS1':
+            # self.exptime = self.hdr['EXPTIME']
+            self.exptime = 1.0    
+        elif self.origin == 'DES':
             # self.exptime = self.hdr['EXPTIME']
             self.exptime = 1.0    
         return
