@@ -16,11 +16,11 @@ def compose(argv):
         compose.py
 
     PURPOSE
-        Make a color composite PNG image from 3 FITS images, using the Lupton
-        algorithm. Part of the HumVI package.
+      Make a color composite PNG image from 3 FITS images, using the Lupton
+      algorithm. Part of the HumVI package.
 
     COMMENTS
-        Reads filter name and zero point from header and tries to set scales
+      Reads filter name and zero point from header and tries to set scales
       automatically - unless scales are set on command line. Note
       telescope/survey has to be recognised for this to work...
 
@@ -31,8 +31,6 @@ def compose(argv):
       -h        Print this message
       -v        Verbose operation
       -b --subtract-background
-      -l        Follow Lupton et al [default]
-      -w        Follow Wherry et al
 
     INPUTS
       red.fits etc  Names of FITS files containing image data
@@ -51,8 +49,7 @@ def compose(argv):
 
 
     EXAMPLES
-
-        compose.py  -v -s 0.8,1.0,1.0 -z 0.0 -p 1.0,0.03 -m -1.0 \
+        compose.py  -v -s 2.0,1.5,1.0 -z 0.0 -p 2.0,0.03 -m -1.0 \
         -o examples/CFHTLS_27_gri.png \
         examples/CFHTLS_27_i_sci.fits \
         examples/CFHTLS_27_r_sci.fits \
@@ -99,7 +96,7 @@ def compose(argv):
 
     outfile = "color.png"
 
-    pars = '1,0.04'
+    pars = '2,0.03'
     scales = 'Auto'
     backsub = False
     saturation = 'white'
