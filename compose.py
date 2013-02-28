@@ -50,21 +50,23 @@ def compose(argv):
 
     EXAMPLES
     
+        Note the different alpha required, to cope with survey depth!
+    
         CFHTLS:
-          compose.py  -v -s 2.0,1.5,1.0 -z 0.0 -p 2.0,0.03 -m -1.0 \
+          compose.py  -v -s 0.4,0.6,1.7 -z 0.0 -p 1.7,0.09 -m -1.0 \
           -o examples/CFHTLS_27_gri.png \
           examples/CFHTLS_27_i_sci.fits \
           examples/CFHTLS_27_r_sci.fits \
           examples/CFHTLS_27_g_sci.fits
 
-        PS1:
-          compose.py  -v -s 0.8,1.0,1.0 -z 0.0 -p 1.0,0.03 -m -1.0 \
+        PS1 (needs optimizing on a larger image):
+          compose.py  -v -s 0.4,0.6,1.7 -z 0.0 -p 1.7,300.0 -m -1.0 \
           -o examples/H1413+117_10x10arcsec_riz.png \
           examples/H1413+117_10x10arcsec_55377.34051_z_sci.fits \
           examples/H1413+117_10x10arcsec_55665.51546_i_sci.fits \
           examples/H1413+117_10x10arcsec_55664.39704_r_sci.fits
 
-        DES:
+        DES (very experimental - vary alpha first!):
           compose.py -v -s 2.0,1.5,2.5 -z 0.0 -p 2.0,0.04 -m -1.0 \
           -o bullet_gri.cropped.png \
           bullet_i.10.cropped.fits \       
@@ -78,17 +80,18 @@ def compose(argv):
       second or AB maggies.
 
     - Code currently assumes one file per channel, whereas we might want to
-      use N>3 images
-      in combination. N scales would then be required, and the image to
-      channel transformation performed after scaling but before stretching.
-      Masking would need to be done at this point too.
+      use N>3 images in combination.  The image to channel transformation 
+      would be performed after scaling to flux units but before
+      stretching. Masking would need to be done at this point too.
 
-    - Should cope with just two or even one input image file.
+    - Should cope with just two, or even one, input image file(s).
 
     HISTORY
       2012-05-11    started Marshall (Oxford)
       2012-07-??    integrated with wherry.py Sandford (NYU)
-      2012-12-19    defaults set for CFHTLS images Marshall (Adler)
+      2012-12-19    defaults set for CFHTLS images Marshall (Oxford)
+      2013-02-21    defaults set for PS1 images Marshall (Oxford)
+      2013-02-26    experimenting with DES images Hirsch (UCL)
     """
 
     # -------------------------------------------------------------------
@@ -106,8 +109,11 @@ def compose(argv):
 
     outfile = "color.png"
 
-    pars = '2,0.03'
-    scales = 'Auto'
+    # Defaults optimized for CFHTLS...
+    pars = '1.7,0.09'
+    scales = '0.4,0.6,1.7'
+    
+    # More general sensible choices:
     backsub = False
     saturation = 'white'
     offset = 0.0
@@ -160,6 +166,10 @@ def compose(argv):
     Qs,alphas = pars.split(',')
     Q = float(Qs)
     alpha = float(alphas)
+    
+    # Parse channel colour scales:
+    x,y,z = scales.split(',')
+    rscale,gscale,bscale = float(x),float(y),float(z)
 
     # -------------------------------------------------------------------
     # Read in images, calibrated into flux units:
@@ -191,12 +201,6 @@ def compose(argv):
     # -------------------------------------------------------------------
     # Set scales determining color balance in composite:
 
-    if scales == 'Auto':
-        rscale,gscale,bscale = 1.0,1.0,1.0
-    else:
-        x,y,z = scales.split(',')
-        rscale,gscale,bscale = float(x),float(y),float(z)
-    
     rscale,gscale,bscale = humvi.normalize_scales(rscale,gscale,bscale)
     red.set_scale(manually=rscale)
     green.set_scale(manually=gscale)

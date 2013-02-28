@@ -45,9 +45,10 @@ class channel:
         # Airmass? Gain?
 
         # Compute calibration factor for image pixel values to 
-        # convert them into flux units. The 26 is chosen such that 
-        # Q = 1 gives a sensible image.
-        self.calib = (10**(self.zpt - 26.0)) / self.exptime
+        # convert them into flux units. The 30 is arbitrary, and 
+        # simply determines the absolute value of alpha required 
+        # for a nice image. 
+        self.calib = (10**(self.zpt - 30.0)) / self.exptime
         self.image *= self.calib
         
         return
@@ -55,6 +56,11 @@ class channel:
     def get_origin(self):
         if self.hdr.has_key('ORIGIN'):  
             if self.hdr['ORIGIN'] == 'CFHT':
+                self.origin = 'CFHT'
+            else:
+                self.origin = 'DES'
+        elif self.hdr.has_key('TELESCOP'):  
+            if self.hdr['TELESCOP'] == 'CFHT 3.6m':
                 self.origin = 'CFHT'
             else:
                 self.origin = 'DES'
@@ -69,22 +75,22 @@ class channel:
 
     def get_zeropoint(self):
         if self.origin == 'CFHT':
-            if self.hdr.has_key('PHOT_C'):
-                self.zpt = self.hdr['PHOT_C']
-            elif self.hdr.has_key('MZP_AB'):
+            if self.hdr.has_key('MZP_AB'):
                 self.zpt = self.hdr['MZP_AB']
+            # elif self.hdr.has_key('PHOT_C'):
+            #     self.zpt = self.hdr['PHOT_C']
             else:
-                raise "No zpt header keywords found."    
+                self.zpt = 30.0    
         elif self.origin == 'PS1':
             self.zpt = self.hdr['HIERARCH FPA.ZP']
         elif self.origin == 'DES':
             self.zpt = -self.hdr['FID_ZP']
-        print self.zpt
         return
 
     def get_exptime(self):
         # Here we assume that both CFHT and PS1 provide images with 
-        # pixel values in counts per second... CHECK THIS
+        # pixel values in counts per second... or that the zero point
+        # takes into account the exptime.
         if self.origin == 'CFHT':
             self.exptime = 1.0    
         elif self.origin == 'PS1':
