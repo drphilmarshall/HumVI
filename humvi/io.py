@@ -41,29 +41,32 @@ class channel:
         
         # Get zero point, exptime:
         self.get_zeropoint()
-        self.get_exptime()
-        # Airmass? Gain?
+        # EXPTIME is 1.0 for images in counts/s - but headers do not always
+        # get this right...
+        #  self.get_exptime()
+        self.exptime = 1.0
+        # Airmass? Gain? Should be included in zeropoint.
 
         # Compute calibration factor for image pixel values to 
         # convert them into flux units. The 30 is arbitrary, and 
         # simply determines the absolute value of alpha required 
         # for a nice image. 
-        self.calib = (10**(self.zpt - 30.0)) / self.exptime
+        self.calib = (10**(30.0 - self.zpt)) / self.exptime
         self.image *= self.calib
         
         return
         
     def get_origin(self):
-        if self.hdr.has_key('ORIGIN'):  
-            if self.hdr['ORIGIN'] == 'CFHT':
-                self.origin = 'CFHT'
-            else:
-                self.origin = 'DES'
-        elif self.hdr.has_key('TELESCOP'):  
+        if self.hdr.has_key('TELESCOP'):  
             if self.hdr['TELESCOP'] == 'CFHT 3.6m':
                 self.origin = 'CFHT'
             else:
-                self.origin = 'DES'
+                self.origin = self.hdr['TELESCOP']
+        elif self.hdr.has_key('ORIGIN'):  
+            if self.hdr['ORIGIN'] == 'CFHT':
+                self.origin = 'CFHT'
+            else:
+                self.origin = self.hdr['ORIGIN']
         else:
             if self.hdr.has_key('PSCAMERA'):
                 self.origin = 'PS1'
@@ -77,6 +80,8 @@ class channel:
         if self.origin == 'CFHT':
             if self.hdr.has_key('MZP_AB'):
                 self.zpt = self.hdr['MZP_AB']
+            elif self.hdr.has_key('MAGZP'):
+                self.zpt = self.hdr['MAGZP']
             # elif self.hdr.has_key('PHOT_C'):
             #     self.zpt = self.hdr['PHOT_C']
             else:
