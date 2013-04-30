@@ -42,10 +42,11 @@ class channel:
         # Get zero point, exptime:
         self.get_zeropoint()
         # EXPTIME is 1.0 for images in counts/s - but headers do not always
-        # get this right...
-        #  self.get_exptime()
-        self.exptime = 1.0
+        # get this right... get_exptime gets this right.
+        self.get_exptime()
         # Airmass? Gain? Should be included in zeropoint.
+
+        # print self.origin,self.exptime,self.zpt
 
         # Compute calibration factor for image pixel values to 
         # convert them into flux units. The 30 is arbitrary, and 
@@ -105,7 +106,6 @@ class channel:
             # self.exptime = self.hdr['EXPTIME']
             self.exptime = 1.0    
         return
-
 
     def set_scale(self,manually=False):
         if manually:

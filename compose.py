@@ -54,24 +54,33 @@ def compose(argv):
     
         CFHTLS:
           compose.py  -v -s 0.4,0.6,1.7 -z 0.0 -p 1.7,0.09 -m -1.0 \
-          -o examples/CFHTLS_27_gri.png \
-          examples/CFHTLS_27_i_sci.fits \
-          examples/CFHTLS_27_r_sci.fits \
-          examples/CFHTLS_27_g_sci.fits
+             -o examples/CFHTLS_27_gri.png \
+                examples/CFHTLS_27_i_sci.fits \
+                examples/CFHTLS_27_r_sci.fits \
+                examples/CFHTLS_27_g_sci.fits
 
         PS1 (needs optimizing on a larger image):
+          
+          Single epoch:
           compose.py  -v -s 0.4,0.6,1.7 -z 0.0 -p 1.7,300.0 -m -1.0 \
-          -o examples/H1413+117_10x10arcsec_riz.png \
-          examples/H1413+117_10x10arcsec_55377.34051_z_sci.fits \
-          examples/H1413+117_10x10arcsec_55665.51546_i_sci.fits \
-          examples/H1413+117_10x10arcsec_55664.39704_r_sci.fits
+             -o examples/H1413+117_10x10arcsec_riz.png \
+                examples/H1413+117_10x10arcsec_55377.34051_z_sci.fits \
+                examples/H1413+117_10x10arcsec_55665.51546_i_sci.fits \
+                examples/H1413+117_10x10arcsec_55664.39704_r_sci.fits
+
+          Stacked image:
+          compose.py  -v -s 0.6,0.8,1.0 -z 0.0 -p 1.7,1e-8 -m -1.0 \
+             -o  PS1J134.7115-3.5750_gri.png \
+                 PS1J134.7115-3.5750_i_sci.fits \
+                 PS1J134.7115-3.5750_r_sci.fits \
+                 PS1J134.7115-3.5750_g_sci.fits
 
         DES (very experimental - vary alpha first!):
           compose.py -v -s 2.0,1.5,2.5 -z 0.0 -p 2.0,0.04 -m -1.0 \
-          -o bullet_gri.cropped.png \
-          bullet_i.10.cropped.fits \       
-          bullet_r.12.cropped.fits \
-          bullet_g.11.cropped.fits
+             -o  bullet_gri.cropped.png \
+                 bullet_i.10.cropped.fits \       
+                 bullet_r.12.cropped.fits \
+                 bullet_g.11.cropped.fits
 
     BUGS
 
