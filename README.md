@@ -9,9 +9,9 @@ Creates a composite colour image from sets of input FITS files, following the Lu
 
 Authors 
 -------
-Phil Marshall (Oxford) <dr.phil.marshall@gmail.com>
-Cato Sandford (NYU)
-Anupreeta More (IPMU)
+* Phil Marshall (Oxford) <dr.phil.marshall@gmail.com>
+* Cato Sandford (NYU)
+* Anupreeta More (IPMU)
 
 Date
 ----
