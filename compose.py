@@ -82,6 +82,25 @@ def compose(argv):
                  bullet_r.12.cropped.fits \
                  bullet_g.11.cropped.fits
 
+        VICS82:
+          compose.py -v -s 1.0,1.2,1.2 -z 0.0 -p 0.5,0.2 -m -1.0 \
+             -o  VICS82_example14_iJK_standard.png \
+                 Ks_14.fits \
+                 J_14.fits \
+                 cs82_14.fit
+
+          compose.py -v -s 1.0,1.2,1.2 -z 0.0 -p 0.5,0.5 -m -1.0 \
+             -o  VICS82_example14_iJK_brighter.png \
+                 Ks_14.fits \
+                 J_14.fits \
+                 cs82_14.fit
+
+          compose.py -v -s 1.0,1.2,1.8 -z 0.0 -p 2.0,0.2 -m -1.0 \
+             -o  VICS82_example14_iJK_bluer.png \
+                 Ks_14.fits \
+                 J_14.fits \
+                 cs82_14.fit
+
     BUGS
 
     - Renormalized scales will not be appropriate if one image is in very

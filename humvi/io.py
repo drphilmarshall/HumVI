@@ -68,13 +68,14 @@ class channel:
                 self.origin = 'CFHT'
             else:
                 self.origin = self.hdr['ORIGIN']
+        elif self.hdr.has_key('PSCAMERA'):
+            self.origin = 'PS1'
+        elif self.hdr.has_key('FID_ZP'):
+            self.origin = 'DES'
+        elif self.hdr.has_key('PROV'):
+            self.origin = 'VICS82'
         else:
-            if self.hdr.has_key('PSCAMERA'):
-                self.origin = 'PS1'
-            elif self.hdr.has_key('FID_ZP'):
-                self.origin = 'DES'
-            else:
-                raise "Image is of unknown origin."
+            raise "Image is of unknown origin."
         return
 
     def get_zeropoint(self):
@@ -91,6 +92,10 @@ class channel:
             self.zpt = self.hdr['HIERARCH FPA.ZP']
         elif self.origin == 'DES':
             self.zpt = -self.hdr['FID_ZP']
+        elif self.origin == 'VICS82':
+            self.zpt = 30.0
+        else:
+            self.zpt = 30.0
         return
 
     def get_exptime(self):
@@ -103,6 +108,9 @@ class channel:
             # self.exptime = self.hdr['EXPTIME']
             self.exptime = 1.0    
         elif self.origin == 'DES':
+            # self.exptime = self.hdr['EXPTIME']
+            self.exptime = 1.0    
+        elif self.origin == 'VICS82':
             # self.exptime = self.hdr['EXPTIME']
             self.exptime = 1.0    
         return
