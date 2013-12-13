@@ -8,7 +8,7 @@ information.
 # ======================================================================
 # Globally useful modules:
 
-import numpy,pyfits,Image
+import numpy,pyfits,Image,os
 
 vb = 0
 
@@ -22,8 +22,9 @@ class channel:
 
     def __init__(self,fitsfile):
 
+        self.input = fitsfile
         # Read in image and header:
-        hdulist = pyfits.open(fitsfile)
+        hdulist = pyfits.open(self.input)
         # self.hdr = hdulist[0].header
         # self.image = hdulist[0].data
         # Picking -1 header assumes we have 1 extension or PS1 (2 ext, image is last)
@@ -46,14 +47,51 @@ class channel:
         self.get_exptime()
         # Airmass? Gain? Should be included in zeropoint.
 
-        # print self.origin,self.exptime,self.zpt
+        # print "Image statistics for "+self.input
+        # print "  ",self.origin,self.exptime,self.zpt
 
+        # # Report 5 sigma depth:
+        # image = self.image.copy()
+        # mean = numpy.average(image)
+        # stdev = numpy.std(image)
+        # nsigma = 1
+        # clip = 3
+        # # Apply clipping:
+        # while nsigma > 0.01:
+        #     index = numpy.where(abs((self.image - mean)/stdev) < clip)[0]
+        #     image = image[index]
+        #     newmean = numpy.average(image)
+        #     newstdev = numpy.std(image)
+        #     nsigma = abs(mean - newmean)/newstdev
+        #     mean = newmean
+        #     stdev = newstdev
+        # print "  Before calibration, mean, rms = ",mean,stdev
+        # depth = -2.5*numpy.log10(5.0*stdev) + self.zpt
+        # print "  Approximate 5-sigma limiting magnitude: ",depth
+        
         # Compute calibration factor for image pixel values to 
         # convert them into flux units. The 30 is arbitrary, and 
         # simply determines the absolute value of alpha required 
         # for a nice image. 
-        self.calib = (10**(30.0 - self.zpt)) / self.exptime
+        self.calib = (10.0**(0.4*(30.0 - self.zpt))) / self.exptime
         self.image *= self.calib
+
+        # # Report 5 sigma depth:
+        # image = self.image.copy()
+        # mean = numpy.average(image)
+        # stdev = numpy.std(image)
+        # nsigma = 1
+        # clip = 3
+        # # Apply clipping:
+        # while nsigma > 0.01:
+        #     index = numpy.where(abs((self.image - mean)/stdev) < clip)[0]
+        #     image = image[index]
+        #     newmean = numpy.average(image)
+        #     newstdev = numpy.std(image)
+        #     nsigma = abs(mean - newmean)/newstdev
+        #     mean = newmean
+        #     stdev = newstdev
+        # print "  After calibration, mean, rms = ",mean,stdev
         
         return
         
@@ -93,7 +131,10 @@ class channel:
         elif self.origin == 'DES':
             self.zpt = -self.hdr['FID_ZP']
         elif self.origin == 'VICS82':
-            self.zpt = 30.0
+            if self.hdr.has_key('MZP_AB'):
+                self.zpt = self.hdr['MZP_AB']
+            else:
+                self.zpt = 30.0
         else:
             self.zpt = 30.0
         return
@@ -128,6 +169,16 @@ class channel:
 
     def subtract_background(self):
         self.image -= numpy.median(self.image)
+        return
+        
+    def writefits(self):
+        self.output = str.split(self.input,'.')[0]+'_calibrated.fits'
+        if os.path.exists(self.output): os.remove(self.output) 
+        hdu = pyfits.PrimaryHDU()
+        hdu.header = self.hdr
+        hdu.data = self.image
+        hdu.verify()
+        hdu.writeto(self.output)
         return
 
 # ======================================================================
