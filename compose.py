@@ -4,7 +4,8 @@
 # Globally useful modules:
 
 import numpy
-import sys,getopt,Image
+import sys,getopt
+from PIL import Image
 import humvi
 import os
 

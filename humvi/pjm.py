@@ -8,7 +8,8 @@ making color composite images.
 # ======================================================================
 # Globally useful modules:
 
-import numpy,Image
+import numpy
+from PIL import Image
 
 # ======================================================================
 # Add small offset to image, to make background look dark gray not black:

@@ -11,7 +11,8 @@ Phil Marshall, Winter 2013
 # ======================================================================
 # Globally useful modules:
 
-import numpy,Image
+import numpy
+from PIL import Image
 
 # ======================================================================
 
