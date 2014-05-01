@@ -8,7 +8,8 @@ information.
 # ======================================================================
 # Globally useful modules:
 
-import numpy,pyfits,Image,os
+import numpy,pyfits,os
+from PIL import Image
 
 vb = 0
 
