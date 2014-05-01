@@ -89,6 +89,12 @@ def compose(argv):
                  Ks_14.fits \
                  J_14.fits \
                  cs82_14.fit
+        KiDS:
+          compose.py -v -s 0.4,1.0,1.7 -z 0.0 -p 1.0,0.02 -m -1.0 \
+             -o examples/KiDS-test_gri.png \
+                examples/KiDS-test_i.fits \
+                examples/KiDS-test_r.fits \
+                examples/KiDS-test_g.fits
 
     BUGS
 
