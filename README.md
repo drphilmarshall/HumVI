@@ -26,11 +26,18 @@ I wish to combine the three new images into an RGB color composite.
 
 Run `compose.py -h` to read about these options, but basically you can choose the 
 contrast via the parameters `-p Q,alpha` and then the R,G,B color balance with the 
-scales `-s R,G,B`. Good strategy is first set `alpha` with `Q=1` so you can just see 
+scales `-s R,G,B`. Good strategy is first to set `alpha` with `Q=1` so you can just see 
 the noise, then adjust Q if necessary to brighten up the features, and finally choose 
 the scales so that the noise looks like an equal mixture of red, green and blue. This 
 latter step may not be possible if the different channel images have very different 
 sensitivity.
+
+As well as Lupton's arcsinh stretch, a major advantage of the HumVI algorithm is that 
+you can set the same scales and parameters for all your images, so that you can compare 
+them across your survey. HumVI reads the zero points out of the FITS headers and uses 
+them to put all the images on the same flux scale (ie so that all the pixel values have 
+the same units), so do make sure your images are well calibrated and have informative, 
+accurate headers.
 
 **Notes:** 
 In the attic there is an attempt (deconvolve.py) at a reworked version of the 
