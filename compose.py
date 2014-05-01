@@ -55,40 +55,31 @@ def compose(argv):
     
         CFHTLS:
           compose.py  -v -s 0.4,0.6,1.7 -z 0.0 -p 1.7,0.09 -m -1.0 \
-             -o examples/CFHTLS_27_gri.png \
-                examples/CFHTLS_27_i_sci.fits \
-                examples/CFHTLS_27_r_sci.fits \
-                examples/CFHTLS_27_g_sci.fits
+             -o examples/CFHTLS-test_gri.png \
+                examples/CFHTLS-test_i.fits \
+                examples/CFHTLS-test_r.fits \
+                examples/CFHTLS-test_g.fits
 
-        PS1 (needs optimizing on a larger image):
-          
-          Single epoch:
-          compose.py  -v -s 0.4,0.6,1.7 -z 0.0 -p 1.7,300.0 -m -1.0 \
-             -o examples/H1413+117_10x10arcsec_riz.png \
-                examples/H1413+117_10x10arcsec_55377.34051_z_sci.fits \
-                examples/H1413+117_10x10arcsec_55665.51546_i_sci.fits \
-                examples/H1413+117_10x10arcsec_55664.39704_r_sci.fits
+        PS1 (Needs optimizing on a larger image.):
+          compose.py  -v -s 0.6,0.6,1.7 -z 0.0 -p 1.7,0.00006 -m -1.0 \
+             -o examples/PS1-test_riz.png \
+                examples/PS1-test_z.fits \
+                examples/PS1-test_i.fits \
+                examples/PS1-test_r.fits
 
-          Stacked image:
-          compose.py  -v -s 0.6,0.8,1.0 -z 0.0 -p 1.7,1e-8 -m -1.0 \
-             -o  PS1J134.7115-3.5750_gri.png \
-                 PS1J134.7115-3.5750_i_sci.fits \
-                 PS1J134.7115-3.5750_r_sci.fits \
-                 PS1J134.7115-3.5750_g_sci.fits
-
-        DES (very experimental - vary alpha first!):
+        DES (Very experimental. No images checked in.):
           compose.py -v -s 2.0,1.5,2.5 -z 0.0 -p 2.0,0.04 -m -1.0 \
-             -o  bullet_gri.cropped.png \
-                 bullet_i.10.cropped.fits \       
-                 bullet_r.12.cropped.fits \
-                 bullet_g.11.cropped.fits
+             -o examples/DES-test_gri.png \
+                examples/DES-test_i.fits \       
+                examples/DES-test_r.fits \
+                examples/DES-test_g.fits
 
         VICS82:
-          compose.py -v -s 1.0,1.4,1.8 -z 0.0 -p 1.5,0.002 -m -1.0 \
-             -o  VICS82_example14_iJK_standard.png \
-                 Ks_14.fits \
-                 J_14.fits \
-                 cs82_14.fit
+          compose.py -v -s 1.0,1.4,2.0 -z 0.0 -p 1.5,0.4 -m -1.0 \
+             -o examples/VICS82-test_iJKs.png \
+                examples/VICS82-test_Ks.fits \
+                examples/VICS82-test_J.fits \
+                examples/VICS82-test_i.fits
         KiDS:
           compose.py -v -s 0.4,1.0,1.7 -z 0.0 -p 1.0,0.02 -m -1.0 \
              -o examples/KiDS-test_gri.png \
