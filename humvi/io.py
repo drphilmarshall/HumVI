@@ -100,6 +100,9 @@ class channel:
         if self.hdr.has_key('TELESCOP'):  
             if self.hdr['TELESCOP'] == 'CFHT 3.6m':
                 self.origin = 'CFHT'
+            elif self.hdr['TELESCOP'] == 'ESO-VLT-U0':
+                # Assume that all data from ESO-VLT-U0 is from KIDS.
+                self.origin = "KIDS"
             else:
                 self.origin = self.hdr['TELESCOP']
         elif self.hdr.has_key('ORIGIN'):  
@@ -136,6 +139,9 @@ class channel:
                 self.zpt = self.hdr['MZP_AB']
             else:
                 self.zpt = 30.0
+        elif self.origin == 'KIDS':
+            # KiDS coadds are calibrated to ZPT=0.
+            self.zpt = 0.0
         else:
             self.zpt = 30.0
         return
