@@ -155,6 +155,12 @@ class channel:
         elif self.origin == 'VICS82':
             # self.exptime = self.hdr['EXPTIME']
             self.exptime = 1.0    
+        elif self.origin == 'KIDS':
+            # self.exptime = self.hdr['EXPTIME']
+            self.exptime = 1.0    
+        else:
+            # Use 1.0 as default to ensure the program doesn't crash.
+            self.exptime = 1.0
         return
 
     def set_scale(self,manually=False):
