@@ -19,7 +19,8 @@ Shared freely at https://bitbucket.org/lutorm/python/src
 
 """
 
-import Image, ImageColor, pyfits, os.path, types, pdb
+import pyfits, os.path, types, pdb
+from PIL import Image, ImageColor
 from numpy import *
 from scipy import ndimage
 
