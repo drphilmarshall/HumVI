@@ -12,20 +12,14 @@ Authors
 * Phil Marshall (KIPAC) <dr.phil.marshall@gmail.com>
 * Cato Sandford (NYU)
 * Anupreeta More (IPMU)
-* Hug Buddelmeijer (Kapteyn)
+* Hugo Buddelmeijer (Kapteyn)
 
 Usage
 -----
-compose.py takes in 3 FITS files as input, and returns
-a color composite, color-saturated png image with an arcsinh stretch. 
+The main executable script is `compose.py`. It takes in 3 FITS files as input, and returns
+a color composite, color-saturated png image with an arcsinh stretch. Make sure this script is on your PATH, and than the `humvi` directory is on your PYTHONPATH.
 
-*In the attic there is an attempt (deconvolve.py) at a reworked version of the 
-Magain, Courbin & Sohy (1998) deconvolution algorithm, that is non-operational. The problem of how to bring
-images from 3 different filters to a common resolution remains open. For now, don't go in the attic!*
-
-Example
--------
-I have an image in each of three bandpasses, called i.fits, r.fits and g.fits, in the current directory. 
+**Example:** I have an image in each of three bandpasses, called i.fits, r.fits and g.fits, in the current directory. 
 I wish to combine the three new images into an RGB color composite.
 
 	compose.py  -s 0.4,1.0,1.7  -p 1.0,0.02  -o gri.png  i.fits r.fits g.fits
@@ -37,6 +31,11 @@ the noise, then adjust Q if necessary to brighten up the features, and finally c
 the scales so that the noise looks like an equal mixture of red, green and blue. This 
 latter step may not be possible if the different channel images have very different 
 sensitivity.
+
+**Notes:** 
+In the attic there is an attempt (deconvolve.py) at a reworked version of the 
+Magain, Courbin & Sohy (1998) deconvolution algorithm, that is non-operational. The problem of how to bring
+images from 3 different filters to a common resolution remains open. For now, don't go in the attic!
 
 Dependencies
 ------------
