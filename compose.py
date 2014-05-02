@@ -81,7 +81,7 @@ def compose(argv):
                 examples/VICS82-test_J.fits \
                 examples/VICS82-test_i.fits
         KiDS:
-          compose.py -v -s 0.4,1.0,1.7 -z 0.0 -p 1.0,0.02 -m -1.0 \
+          compose.py -v -s 0.4,0.6,1.7 -z 0.0 -p 1.5,0.02 -m -1.0 \
              -o examples/KiDS-test_gri.png \
                 examples/KiDS-test_i.fits \
                 examples/KiDS-test_r.fits \
