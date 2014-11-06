@@ -67,8 +67,8 @@ def compose(argv):
                 examples/PS1-test_i.fits \
                 examples/PS1-test_r.fits
 
-        DES (Very experimental. No images checked in.):
-          compose.py -v -s 2.0,1.5,2.5 -z 0.0 -p 2.0,0.04 -m -1.0 \
+        DES (Experimental. No images checked in.):
+          compose.py -v -s 1.0,1.2,2.5 -z 0.0 -p 1.0,0.03 -m -1.0 \
              -o examples/DES-test_gri.png \
                 examples/DES-test_i.fits \       
                 examples/DES-test_r.fits \

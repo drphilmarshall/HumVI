@@ -97,7 +97,7 @@ class channel:
         return
         
     def get_origin(self):
-        if self.hdr.has_key('TELESCOP'):  
+        if 'TELESCOP' in self.hdr:  
             if self.hdr['TELESCOP'] == 'CFHT 3.6m':
                 self.origin = 'CFHT'
             elif self.hdr['TELESCOP'] == 'ESO-VLT-U0':
@@ -105,44 +105,46 @@ class channel:
                 self.origin = "KIDS"
             else:
                 self.origin = self.hdr['TELESCOP']
-        elif self.hdr.has_key('ORIGIN'):  
+        elif 'ORIGIN' in self.hdr:  
             if self.hdr['ORIGIN'] == 'CFHT':
                 self.origin = 'CFHT'
+            elif self.hdr['ORIGIN'] == 'DES':
+                self.origin = 'DES'
             else:
                 self.origin = self.hdr['ORIGIN']
-        elif self.hdr.has_key('PSCAMERA'):
+        elif 'PSCAMERA' in self.hdr:
             self.origin = 'PS1'
-        elif self.hdr.has_key('FID_ZP'):
+        elif 'FID_ZP' in self.hdr:
             self.origin = 'DES'
-        elif self.hdr.has_key('PROV'):
+        elif 'PROV' in self.hdr:
             self.origin = 'VICS82'
         else:
-            raise "Image is of unknown origin."
+            self.origin = 'UNKNOWN'
         return
 
     def get_zeropoint(self):
         if self.origin == 'CFHT':
-            if self.hdr.has_key('MZP_AB'):
+            if 'MZP_AB' in self.hdr:
                 self.zpt = self.hdr['MZP_AB']
-            elif self.hdr.has_key('MAGZP'):
+            elif 'MAGZP' in self.hdr:
                 self.zpt = self.hdr['MAGZP']
-            # elif self.hdr.has_key('PHOT_C'):
+            # elif 'PHOT_C' in self.hdr:
             #     self.zpt = self.hdr['PHOT_C']
             else:
                 self.zpt = 30.0    
         elif self.origin == 'PS1':
             self.zpt = self.hdr['HIERARCH FPA.ZP']
         elif self.origin == 'DES':
-            self.zpt = -self.hdr['FID_ZP']
+            self.zpt = self.hdr['MZP_AB']
         elif self.origin == 'VICS82':
-            if self.hdr.has_key('MZP_AB'):
+            if 'MZP_AB' in self.hdr:
                 self.zpt = self.hdr['MZP_AB']
             else:
                 self.zpt = 30.0
         elif self.origin == 'KIDS':
             # KiDS coadds are calibrated to ZPT=0.
             self.zpt = 0.0
-        else:
+        else: # UNKNOWN
             self.zpt = 30.0
         return
 
@@ -164,7 +166,7 @@ class channel:
         elif self.origin == 'KIDS':
             # self.exptime = self.hdr['EXPTIME']
             self.exptime = 1.0    
-        else:
+        else: #UNKNOWN
             # Use 1.0 as default to ensure the program doesn't crash.
             self.exptime = 1.0
         return
