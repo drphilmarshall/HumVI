@@ -166,7 +166,9 @@ gallery.pl -t -x 5 -y 5 -pdf $pngfiles \
 # ============================================================================
 # 2015-03-04 (Wednesday) 13:15 PST
 
-# Setting scales for DES images.
+# Setting scales for DES images. 34 test images from Y1 dataset, des_cutouts_2
+# Try varying scales, and parameters, and see if sample is uniform.
+
 
 DES_CUTOUTS_2_SCALES:
 
