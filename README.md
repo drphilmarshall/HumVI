@@ -1,21 +1,24 @@
-HumVI
-=====
+# HumVI
 
 Human Viewable (color composite) Image creation.
 
-Purpose
--------
-Creates a composite colour image from sets of input FITS files, following the Lupton et al (2004) composition algorithm (with extensions by Hogg & Wherry.)
+## Purpose
 
-Authors 
--------
-* Phil Marshall (KIPAC) <dr.phil.marshall@gmail.com>
+![](https://raw.githubusercontent.com/drphilmarshall/HumVI/master/examples/CFHTLS-test_gri.png)
+
+Creates a composite colour image like the one above from sets of input FITS files, following the Lupton et al (2004) composition algorithm (with extensions by Hogg & Wherry.)
+
+## Contributors, Licence, Credit etc
+
+* Phil Marshall (KIPAC)
 * Cato Sandford (NYU)
 * Anupreeta More (IPMU)
 * Hugo Buddelmeijer (Kapteyn)
 
-Usage
------
+This software is distributed under the MIT license - you can do whatever you like with it, but don't blame us! If you use HumVI in your research, please cite [this paper](https://github.com/drphilmarshall/SpaceWarps/raw/master/doc/sw-system.pdf) as (Marshall et al, in preparation). If you are interested in the further development of HumVI, please [get in touch via the issues](https://github.com/drphilmarshall/HumVI/issues). Thanks!
+
+## Usage
+
 The main executable script is `compose.py`. It takes in 3 FITS files as input, and returns
 a color composite, color-saturated png image with an arcsinh stretch. Make sure this script is on your PATH, and than the `humvi` directory is on your PYTHONPATH.
 
@@ -42,10 +45,9 @@ accurate headers.
 **Notes:** 
 In the attic there is an attempt (deconvolve.py) at a reworked version of the 
 Magain, Courbin & Sohy (1998) deconvolution algorithm, that is non-operational. The problem of how to bring
-images from 3 different filters to a common resolution remains open. For now, don't go in the attic!
+images from 3 different filters to a common resolution remains open. For now, don't go in the attic! If you are interested in working on this extension to HumVI, please do [get in touch via the issues](https://github.com/drphilmarshall/HumVI/issues), or submit a pull request! 
 
-Dependencies
-------------
+## Dependencies
 
 The composition script requires:
 * the Python Image Library (PIL) available from http://www.pythonware.com/products/pil/

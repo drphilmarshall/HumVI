@@ -50,9 +50,9 @@ def compose(argv):
 
 
     EXAMPLES
-    
+
         Note the different alpha required, to cope with survey depth!
-    
+
         CFHTLS:
           compose.py  -v -s 0.4,0.6,1.7 -z 0.0 -p 1.7,0.09 -m -1.0 \
              -o examples/CFHTLS-test_gri.png \
@@ -67,10 +67,10 @@ def compose(argv):
                 examples/PS1-test_i.fits \
                 examples/PS1-test_r.fits
 
-        DES (Very experimental. No images checked in.):
-          compose.py -v -s 2.0,1.5,2.5 -z 0.0 -p 2.0,0.04 -m -1.0 \
+        DES (Experimental. No images checked in.):
+          compose.py -v -s 1.0,1.2,2.8 -z 0.0 -p 1.0,0.03 -m -1.0 \
              -o examples/DES-test_gri.png \
-                examples/DES-test_i.fits \       
+                examples/DES-test_i.fits \
                 examples/DES-test_r.fits \
                 examples/DES-test_g.fits
 
@@ -94,7 +94,7 @@ def compose(argv):
       second or AB maggies.
 
     - Code currently assumes one file per channel, whereas we might want to
-      use N>3 images in combination.  The image to channel transformation 
+      use N>3 images in combination.  The image to channel transformation
       would be performed after scaling to flux units but before
       stretching. Masking would need to be done at this point too.
 
@@ -126,7 +126,7 @@ def compose(argv):
     # Defaults optimized for CFHTLS...
     pars = '1.7,0.09'
     scales = '0.4,0.6,1.7'
-    
+
     # More general sensible choices:
     backsub = False
     saturation = 'white'
@@ -180,7 +180,7 @@ def compose(argv):
     Qs,alphas = pars.split(',')
     Q = float(Qs)
     alpha = float(alphas)
-    
+
     # Parse channel colour scales:
     x,y,z = scales.split(',')
     rscale,gscale,bscale = float(x),float(y),float(z)
@@ -202,9 +202,9 @@ def compose(argv):
       band3.subtract_background()
 
     # -------------------------------------------------------------------
-    
+
     # BUG: as it stands, this code assumes one file one channel, whereas
-    # in practice we might like to be able to make composites based on 
+    # in practice we might like to be able to make composites based on
     # N bands. Need to overload + operator for channels? Calib etc will
     # need altering as well as image.
 
