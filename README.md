@@ -1,18 +1,19 @@
-HumVI
-=====
+# HumVI
 
 Human Viewable (color composite) Image creation.
 
-Purpose
--------
+## Purpose
+
 Creates a composite colour image from sets of input FITS files, following the Lupton et al (2004) composition algorithm (with extensions by Hogg & Wherry.)
 
-Authors 
--------
+## Contributors, Licence, Credit etc
+
 * Phil Marshall (KIPAC) <dr.phil.marshall@gmail.com>
 * Cato Sandford (NYU)
 * Anupreeta More (IPMU)
 * Hugo Buddelmeijer (Kapteyn)
+
+This software is distributed under the MIT license - you can do whatever you like with it, but don't blame us! If you use HumVI in your research, please cite [this paper](https://github.com/drphilmarshall/SpaceWarps/raw/master/doc/sw-system.pdf) as (Marshall et al, in preparation). Thanks!
 
 Usage
 -----
@@ -42,7 +43,7 @@ accurate headers.
 **Notes:** 
 In the attic there is an attempt (deconvolve.py) at a reworked version of the 
 Magain, Courbin & Sohy (1998) deconvolution algorithm, that is non-operational. The problem of how to bring
-images from 3 different filters to a common resolution remains open. For now, don't go in the attic!
+images from 3 different filters to a common resolution remains open. For now, don't go in the attic! If you are interested in working on this extension to HumVI, please do get in touch via the issues, or submit a pull request! 
 
 Dependencies
 ------------
