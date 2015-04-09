@@ -4,7 +4,9 @@ Human Viewable (color composite) Image creation.
 
 ## Purpose
 
-Creates a composite colour image from sets of input FITS files, following the Lupton et al (2004) composition algorithm (with extensions by Hogg & Wherry.)
+![](https://raw.githubusercontent.com/drphilmarshall/HumVI/master/examples/CFHTLS-test_gri.png)
+
+Creates a composite colour image like the one above from sets of input FITS files, following the Lupton et al (2004) composition algorithm (with extensions by Hogg & Wherry.)
 
 ## Contributors, Licence, Credit etc
 
