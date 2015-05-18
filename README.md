@@ -15,7 +15,7 @@ Creates a composite colour image like the one above from sets of input FITS file
 * Anupreeta More (IPMU)
 * Hugo Buddelmeijer (Kapteyn)
 
-This software is distributed under the MIT license - you can do whatever you like with it, but don't blame us! If you use HumVI in your research, please cite [this paper](https://github.com/drphilmarshall/SpaceWarps/raw/master/doc/sw-system.pdf) as (Marshall et al, in preparation). If you are interested in the further development of HumVI, please [get in touch via the issues](https://github.com/drphilmarshall/HumVI/issues). Thanks!
+This software is distributed under the MIT license - you can do whatever you like with it, but don't blame us! If you use HumVI in your research, please cite [this paper](http://arxiv.org/abs/1504.06148) as (Marshall et al 2015). If you are interested in the further development of HumVI, please [get in touch via the issues](https://github.com/drphilmarshall/HumVI/issues). Thanks!
 
 ## Usage
 
