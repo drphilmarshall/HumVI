@@ -43,12 +43,19 @@ the same units), so do make sure your images are well calibrated and have inform
 accurate headers.
 
 **Notes:** 
-In the attic there is an attempt (deconvolve.py) at a reworked version of the 
+
+`HumVI` assumes that your FITS images have reasonable images and headers in them. For best results, you should use photometrically calibrated images, that is, where the pixel values can be converted into flux units as follows:
+```python
+        image *= (10.0**(0.4*(30.0 - ZPT))) / EXPTIME
+```
+`HumVI` will attempt to extract the values of `EXPTIME` and `ZPT` from the headers of your files, but if it cannot find them, it will use `EXPTIME = 1.0` seconds and `ZPT = 30` magnitudes by default. You may need to edit `humvi/io.py` to cope with your file headers, especially if the `ORIGIN` or `TELESCOP` keywords are defined but not recognised by the code.
+
+In the attic there is an attempt (`deconvolve.py`) at a reworked version of the 
 Magain, Courbin & Sohy (1998) deconvolution algorithm, that is non-operational. The problem of how to bring
 images from 3 different filters to a common resolution remains open. For now, don't go in the attic! If you are interested in working on this extension to HumVI, please do [get in touch via the issues](https://github.com/drphilmarshall/HumVI/issues), or submit a pull request! 
 
 ## Dependencies
 
 The composition script requires:
-* the Python Image Library (PIL) available from http://www.pythonware.com/products/pil/
-* numpy
+* the [Python Image Library (PIL)](http://www.pythonware.com/products/pil)
+* NumPy
