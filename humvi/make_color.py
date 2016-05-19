@@ -19,7 +19,8 @@ Shared freely at https://bitbucket.org/lutorm/python/src
 
 """
 
-import pyfits, os.path, types, pdb
+import os.path, types, pdb
+import astropy.io.fits as pyfits
 from PIL import Image, ImageColor
 from numpy import *
 from scipy import ndimage
@@ -568,4 +569,3 @@ def make_framelist(files, suffix):
       frames+=curf
       inf.close()
     return frames
-

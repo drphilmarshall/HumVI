@@ -8,7 +8,8 @@ information.
 # ======================================================================
 # Globally useful modules:
 
-import numpy,pyfits,os
+import numpy,os
+import astropy.io.fits as pyfits
 from PIL import Image
 
 vb = 0
@@ -37,10 +38,10 @@ class channel:
         return
 
     def calibrate(self):
-        
+
         # Which telescope took these data?
         self.get_origin()
-        
+
         # Get zero point, exptime:
         self.get_zeropoint()
         # EXPTIME is 1.0 for images in counts/s - but headers do not always
@@ -69,11 +70,11 @@ class channel:
         # print "  Before calibration, mean, rms = ",mean,stdev
         # depth = -2.5*numpy.log10(5.0*stdev) + self.zpt
         # print "  Approximate 5-sigma limiting magnitude: ",depth
-        
-        # Compute calibration factor for image pixel values to 
-        # convert them into flux units. The 30 is arbitrary, and 
-        # simply determines the absolute value of alpha required 
-        # for a nice image. 
+
+        # Compute calibration factor for image pixel values to
+        # convert them into flux units. The 30 is arbitrary, and
+        # simply determines the absolute value of alpha required
+        # for a nice image.
         self.calib = (10.0**(0.4*(30.0 - self.zpt))) / self.exptime
         self.image *= self.calib
 
@@ -93,11 +94,11 @@ class channel:
         #     mean = newmean
         #     stdev = newstdev
         # print "  After calibration, mean, rms = ",mean,stdev
-        
+
         return
-        
+
     def get_origin(self):
-        if 'TELESCOP' in self.hdr:  
+        if 'TELESCOP' in self.hdr:
             if self.hdr['TELESCOP'] == 'CFHT 3.6m':
                 self.origin = 'CFHT'
             elif self.hdr['TELESCOP'] == 'ESO-VLT-U0':
@@ -105,7 +106,7 @@ class channel:
                 self.origin = "KIDS"
             else:
                 self.origin = self.hdr['TELESCOP']
-        elif 'ORIGIN' in self.hdr:  
+        elif 'ORIGIN' in self.hdr:
             if self.hdr['ORIGIN'] == 'CFHT':
                 self.origin = 'CFHT'
             elif self.hdr['ORIGIN'] == 'DES':
@@ -131,7 +132,7 @@ class channel:
             # elif 'PHOT_C' in self.hdr:
             #     self.zpt = self.hdr['PHOT_C']
             else:
-                self.zpt = 30.0    
+                self.zpt = 30.0
         elif self.origin == 'PS1':
             self.zpt = self.hdr['HIERARCH FPA.ZP']
         elif self.origin == 'DES':
@@ -149,23 +150,23 @@ class channel:
         return
 
     def get_exptime(self):
-        # Here we assume that both CFHT and PS1 provide images with 
+        # Here we assume that both CFHT and PS1 provide images with
         # pixel values in counts per second... or that the zero point
         # takes into account the exptime.
         if self.origin == 'CFHT':
-            self.exptime = 1.0    
+            self.exptime = 1.0
         elif self.origin == 'PS1':
             # self.exptime = self.hdr['EXPTIME']
-            self.exptime = 1.0    
+            self.exptime = 1.0
         elif self.origin == 'DES':
             # self.exptime = self.hdr['EXPTIME']
-            self.exptime = 1.0    
+            self.exptime = 1.0
         elif self.origin == 'VICS82':
             # self.exptime = self.hdr['EXPTIME']
-            self.exptime = 1.0    
+            self.exptime = 1.0
         elif self.origin == 'KIDS':
             # self.exptime = self.hdr['EXPTIME']
-            self.exptime = 1.0    
+            self.exptime = 1.0
         else: #UNKNOWN
             # Use 1.0 as default to ensure the program doesn't crash.
             self.exptime = 1.0
@@ -185,10 +186,10 @@ class channel:
     def subtract_background(self):
         self.image -= numpy.median(self.image)
         return
-        
+
     def writefits(self):
         self.output = str.split(self.input,'.')[0]+'_calibrated.fits'
-        if os.path.exists(self.output): os.remove(self.output) 
+        if os.path.exists(self.output): os.remove(self.output)
         hdu = pyfits.PrimaryHDU()
         hdu.header = self.hdr
         hdu.data = self.image
@@ -253,5 +254,3 @@ def pack_up(r,g,b):
     return Image.fromarray(x.astype(numpy.uint8))
 
 # ======================================================================
-
-
