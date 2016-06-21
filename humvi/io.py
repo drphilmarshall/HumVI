@@ -199,7 +199,9 @@ class channel:
 
 # ======================================================================
 
-def normalize_scales(s1,s2,s3):
+def normalize_scales(scales):
+    assert len(scales) == 3
+    s1,s2,s3 = scales
     mean = (s1 + s2 + s3)/3.0
     return s1/mean, s2/mean, s3/mean
 

@@ -11,7 +11,7 @@ import os
 
 # =====================================================================
 
-def compose(argv):
+def HumVI(argv):
     """
     NAME
         compose.py
@@ -116,7 +116,7 @@ def compose(argv):
     except getopt.GetoptError, err:
         # print help information and exit:
         print str(err) # will print something like "option -a not recognized"
-        print compose.__doc__
+        print HumVI.__doc__
         return
 
     vb = False
@@ -131,12 +131,11 @@ def compose(argv):
     backsub = False
     saturation = 'white'
     offset = 0.0
-    mask = False
-    masklevel = -1.0
+    masklevel = None # Better default would be -1.0
 
     for o,a in opts:
         if o in ("-h", "--help"):
-            print compose.__doc__
+            print HumVI.__doc__
             return
         elif o in ("-v", "--verbose"):
             vb = True
@@ -149,7 +148,6 @@ def compose(argv):
         elif o in ("-z","--offset"):
             offset = float(a)
         elif o in ("-m","--mask"):
-            mask = True
             masklevel = float(a)
         elif o in ("-o","--output"):
             outfile = a
@@ -167,13 +165,9 @@ def compose(argv):
         rfile = args[0]
         gfile = args[1]
         bfile = args[2]
-        if vb:
-            print "Making color composite image of data in following files:",rfile,gfile,bfile
-            print "Output will be written to",outfile
-            if mask: print "Masking stretched pixel values less than",masklevel
 
     else:
-        print compose.__doc__
+        print HumVI.__doc__
         return
 
     # Parse nonlinearity parameters:
@@ -185,92 +179,10 @@ def compose(argv):
     x,y,z = scales.split(',')
     rscale,gscale,bscale = float(x),float(y),float(z)
 
-    # -------------------------------------------------------------------
-    # Read in images, calibrated into flux units:
+    # Compose the image!
 
-    band3 = humvi.channel(rfile)
-    band2 = humvi.channel(gfile)
-    band1 = humvi.channel(bfile)
+    humvi.compose(rfile, gfile, bfile, scales=(rscale,gscale,bscale), Q=Q, alpha=alpha, masklevel=masklevel, saturation=saturation, offset=offset, backsub=backsub, vb=vb, outfile=outfile)
 
-    # Check shapes are equal:
-    humvi.check_image_shapes(band1.image,band2.image,band3.image)
-
-    # Subtract backgrounds (median, optional):
-    if backsub:
-      band1.subtract_background()
-      band2.subtract_background()
-      band3.subtract_background()
-
-    # -------------------------------------------------------------------
-
-    # BUG: as it stands, this code assumes one file one channel, whereas
-    # in practice we might like to be able to make composites based on
-    # N bands. Need to overload + operator for channels? Calib etc will
-    # need altering as well as image.
-
-    red = band3
-    green = band2
-    blue = band1
-
-    # -------------------------------------------------------------------
-    # Set scales determining color balance in composite:
-
-    rscale,gscale,bscale = humvi.normalize_scales(rscale,gscale,bscale)
-    red.set_scale(manually=rscale)
-    green.set_scale(manually=gscale)
-    blue.set_scale(manually=bscale)
-    if vb: print 'Scales normalized to:',red.scale,green.scale,blue.scale
-
-    # Scale images - only do once:
-    red.apply_scale()
-    green.apply_scale()
-    blue.apply_scale()
-
-    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    # Stretch images to cope with high dynamic range:
-
-    if vb:
-        print "Stretch parameters Q,alpha:",Q,alpha
-        print "At low surface brightness levels, the channel images are further rescaled by alpha"
-        print "Nonlinearity sets in at about 1/Q*alpha in the scaled intensity image:",1.0/(Q*alpha)
-
-    # Compute total intensity image and the arcsinh of it:
-    I = humvi.lupton_intensity(red.image,green.image,blue.image,type='sum')
-    stretch = humvi.lupton_stretch(I,Q,alpha)
-
-    # Apply stretch to channel images:
-    r = stretch * red.image
-    g = stretch * green.image
-    b = stretch * blue.image
-
-    if mask:
-        # Mask problem areas - exact zeros or very negative patches should
-        # be set to zero.
-
-        # BUG: this should have been done after scaling but before conversion
-        # to channels, as its the individual images that have problems...
-
-        r,g,b = humvi.pjm_mask(r,g,b,masklevel)
-
-    # Offset the stretched images to make zero level appear dark gray.
-    # Negative offset makes background more black...
-    r,g,b = humvi.pjm_offset(r,g,b,offset)
-
-    if saturation == 'color':
-        # Saturate to colour at some level - might as well be 1, since
-        # Q redefines scale?:
-        threshold = 1.0
-        r,g,b = humvi.lupton_saturate(r,g,b,threshold)
-    # Otherwise, saturate to white.
-
-    # Package into a python Image, and write out to file:
-    image = humvi.pack_up(r,g,b)
-    image.save(outfile)
-
-
-# ======================================================================
-
-    if vb: print "Image saved to:",outfile
     return
 
 # ======================================================================
