@@ -54,34 +54,34 @@ def HumVI(argv):
         Note the different alpha required, to cope with survey depth!
 
         CFHTLS:
-          compose.py  -v -s 0.4,0.6,1.7 -z 0.0 -p 1.7,0.09 -m -1.0 \
+          HumVI.py  -v -s 0.4,0.6,1.7 -z 0.0 -p 1.7,0.09 -m -1.0 \
              -o examples/CFHTLS-test_gri.png \
                 examples/CFHTLS-test_i.fits \
                 examples/CFHTLS-test_r.fits \
                 examples/CFHTLS-test_g.fits
 
         PS1 (Needs optimizing on a larger image.):
-          compose.py  -v -s 0.6,0.6,1.7 -z 0.0 -p 1.7,0.00006 -m -1.0 \
+          HumVI.py  -v -s 0.6,0.6,1.7 -z 0.0 -p 1.7,0.00006 -m -1.0 \
              -o examples/PS1-test_riz.png \
                 examples/PS1-test_z.fits \
                 examples/PS1-test_i.fits \
                 examples/PS1-test_r.fits
 
         DES (Experimental. No images checked in.):
-          compose.py -v -s 1.0,1.2,2.8 -z 0.0 -p 1.0,0.03 -m -1.0 \
+          HumVI.py -v -s 1.0,1.2,2.8 -z 0.0 -p 1.0,0.03 -m -1.0 \
              -o examples/DES-test_gri.png \
                 examples/DES-test_i.fits \
                 examples/DES-test_r.fits \
                 examples/DES-test_g.fits
 
         VICS82:
-          compose.py -v -s 1.0,1.4,2.0 -z 0.0 -p 1.5,0.4 -m -1.0 \
+          HumVI.py -v -s 1.0,1.4,2.0 -z 0.0 -p 1.5,0.4 -m -1.0 \
              -o examples/VICS82-test_iJKs.png \
                 examples/VICS82-test_Ks.fits \
                 examples/VICS82-test_J.fits \
                 examples/VICS82-test_i.fits
         KiDS:
-          compose.py -v -s 0.4,0.6,1.7 -z 0.0 -p 1.5,0.02 -m -1.0 \
+          HumVI.py -v -s 0.4,0.6,1.7 -z 0.0 -p 1.5,0.02 -m -1.0 \
              -o examples/KiDS-test_gri.png \
                 examples/KiDS-test_i.fits \
                 examples/KiDS-test_r.fits \
@@ -188,6 +188,6 @@ def HumVI(argv):
 # ======================================================================
 
 if __name__ == '__main__':
-    compose(sys.argv[1:])
+    HumVI(sys.argv[1:])
 
 # ======================================================================
