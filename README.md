@@ -2,6 +2,8 @@
 
 Human Viewable (color composite) Image creation.
 
+[![Build Status](https://travis-ci.org/drphilmarshall/HumVI.svg?branch=master)](https://travis-ci.org/drphilmarshall/HumVI)
+
 ## Purpose
 
 ![](https://raw.githubusercontent.com/drphilmarshall/HumVI/master/examples/CFHTLS-test_gri.png)
