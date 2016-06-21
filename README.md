@@ -17,17 +17,21 @@ Creates a composite colour image like the one above from sets of input FITS file
 
 This software is distributed under the MIT license - you can do whatever you like with it, but don't blame us! If you use HumVI in your research, please cite [this paper](http://arxiv.org/abs/1504.06148) as (Marshall et al 2015). If you are interested in the further development of HumVI, please [get in touch via the issues](https://github.com/drphilmarshall/HumVI/issues). Thanks!
 
-## Usage
+## Calling from Python
 
-The main executable script is `compose.py`. It takes in 3 FITS files as input, and returns
+See the [Examples notebook](https://github.com/drphilmarshall/HumVI/blob/master/examples/Examples.ipynb) for how to compose RGB images from python.
+
+## Command Line Usage
+
+The main executable script is `HumVI.py`. It takes in 3 FITS files as input, and returns
 a color composite, color-saturated png image with an arcsinh stretch. Make sure this script is on your PATH, and than the `humvi` directory is on your PYTHONPATH.
 
 **Example:** I have an image in each of three bandpasses, called i.fits, r.fits and g.fits, in the current directory. 
 I wish to combine the three new images into an RGB color composite.
 
-	compose.py  -s 0.4,1.0,1.7  -p 1.0,0.02  -o gri.png  i.fits r.fits g.fits
+	HumVI.py  -s 0.4,1.0,1.7  -p 1.0,0.02  -o gri.png  i.fits r.fits g.fits
 
-Run `compose.py -h` to read about these options, but basically you can choose the 
+Run `HumVI.py -h` to read about these options, but basically you can choose the 
 contrast via the parameters `-p Q,alpha` and then the R,G,B color balance with the 
 scales `-s R,G,B`. Good strategy is first to set `alpha` with `Q=1` so you can just see 
 the noise, then adjust Q if necessary to brighten up the features, and finally choose 
@@ -50,12 +54,9 @@ accurate headers.
 ```
 `HumVI` will attempt to extract the values of `EXPTIME` and `ZPT` from the headers of your files, but if it cannot find them, it will use `EXPTIME = 1.0` seconds and `ZPT = 30` magnitudes by default. You may need to edit `humvi/io.py` to cope with your file headers, especially if the `ORIGIN` or `TELESCOP` keywords are defined but not recognised by the code.
 
-In the attic there is an attempt (`deconvolve.py`) at a reworked version of the 
-Magain, Courbin & Sohy (1998) deconvolution algorithm, that is non-operational. The problem of how to bring
-images from 3 different filters to a common resolution remains open. For now, don't go in the attic! If you are interested in working on this extension to HumVI, please do [get in touch via the issues](https://github.com/drphilmarshall/HumVI/issues), or submit a pull request! 
-
 ## Dependencies
 
 The composition script requires:
 * the [Python Image Library (PIL)](http://www.pythonware.com/products/pil)
 * NumPy
+* astropy
