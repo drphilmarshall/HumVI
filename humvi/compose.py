@@ -4,14 +4,14 @@
 # Globally useful modules:
 
 import numpy
-import sys,getopt
+import sys, getopt
 from PIL import Image
 import humvi
 import os
 
 # =====================================================================
 
-def compose(rfile, gfile, bfile, scales=(1.0,1.0,1.0), Q=1.0, alpha=1.0, \
+def compose(rfile, gfile, bfile, scales=(1.0, 1.0, 1.0), Q=1.0, alpha=1.0, \
             masklevel=None, saturation='color', offset=0.0, backsub=False, \
             vb=False, outfile='color.png'):
     """
@@ -21,9 +21,9 @@ def compose(rfile, gfile, bfile, scales=(1.0,1.0,1.0), Q=1.0, alpha=1.0, \
     # -------------------------------------------------------------------
 
     if vb:
-        print "HumVI: Making color composite image of data in following files:",rfile,gfile,bfile
-        print "HumVI: Output will be written to",outfile
-        if masklevel is not None: print "HumVI: Masking stretched pixel values less than",masklevel
+        print("HumVI: Making color composite image of data in following files:", rfile, gfile, bfile)
+        print("HumVI: Output will be written to", outfile)
+        if masklevel is not None: print("HumVI: Masking stretched pixel values less than", masklevel)
 
     # Read in images, calibrated into flux units:
 
@@ -32,7 +32,7 @@ def compose(rfile, gfile, bfile, scales=(1.0,1.0,1.0), Q=1.0, alpha=1.0, \
     band1 = humvi.channel(bfile)
 
     # Check shapes are equal:
-    humvi.check_image_shapes(band1.image,band2.image,band3.image)
+    humvi.check_image_shapes(band1.image, band2.image, band3.image)
 
     # Subtract backgrounds (median, optional):
     if backsub:
@@ -54,11 +54,11 @@ def compose(rfile, gfile, bfile, scales=(1.0,1.0,1.0), Q=1.0, alpha=1.0, \
     # -------------------------------------------------------------------
     # Set scales determining color balance in composite:
 
-    rscale,gscale,bscale = humvi.normalize_scales(scales)
+    rscale, gscale, bscale = humvi.normalize_scales(scales)
     red.set_scale(manually=rscale)
     green.set_scale(manually=gscale)
     blue.set_scale(manually=bscale)
-    if vb: print 'HumVI: Scales normalized to:',red.scale,green.scale,blue.scale
+    if vb: print('HumVI: Scales normalized to:', red.scale, green.scale, blue.scale)
 
     # Scale images - only do once:
     red.apply_scale()
@@ -69,13 +69,13 @@ def compose(rfile, gfile, bfile, scales=(1.0,1.0,1.0), Q=1.0, alpha=1.0, \
     # Stretch images to cope with high dynamic range:
 
     if vb:
-        print "HumVI: Stretch parameters Q,alpha:",Q,alpha
-        print "HumVI: At low surface brightness levels, the channel images are further rescaled by alpha"
-        print "HumVI: Nonlinearity sets in at about 1/Q*alpha in the scaled intensity image:",1.0/(Q*alpha)
+        print("HumVI: Stretch parameters Q,alpha:", Q, alpha)
+        print("HumVI: At low surface brightness levels, the channel images are further rescaled by alpha")
+        print("HumVI: Nonlinearity sets in at about 1/Q*alpha in the scaled intensity image:", 1.0/(Q*alpha))
 
     # Compute total intensity image and the arcsinh of it:
-    I = humvi.lupton_intensity(red.image,green.image,blue.image,type='sum')
-    stretch = humvi.lupton_stretch(I,Q,alpha)
+    I = humvi.lupton_intensity(red.image, green.image, blue.image, type='sum')
+    stretch = humvi.lupton_stretch(I, Q, alpha)
 
     # Apply stretch to channel images:
     r = stretch * red.image
@@ -89,24 +89,24 @@ def compose(rfile, gfile, bfile, scales=(1.0,1.0,1.0), Q=1.0, alpha=1.0, \
         # BUG: this should have been done after scaling but before conversion
         # to channels, as its the individual images that have problems...
 
-        r,g,b = humvi.pjm_mask(r,g,b,masklevel)
+        r, g, b = humvi.pjm_mask(r, g, b, masklevel)
 
     # Offset the stretched images to make zero level appear dark gray.
     # Negative offset makes background more black...
-    r,g,b = humvi.pjm_offset(r,g,b,offset)
+    r, g, b = humvi.pjm_offset(r, g, b, offset)
 
     if saturation == 'color':
         # Saturate to colour at some level - might as well be 1, since
         # Q redefines scale?:
         threshold = 1.0
-        r,g,b = humvi.lupton_saturate(r,g,b,threshold)
+        r, g, b = humvi.lupton_saturate(r, g, b, threshold)
     # Otherwise, saturate to white.
 
     # Package into a python Image, and write out to file:
-    image = humvi.pack_up(r,g,b)
+    image = humvi.pack_up(r, g, b)
     image.save(outfile)
 
-    if vb: print "HumVI: Image saved to:",outfile
+    if vb: print("HumVI: Image saved to:", outfile)
 
     return
 
