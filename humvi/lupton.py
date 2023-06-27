@@ -26,16 +26,16 @@ def lupton_intensity(r,g,b,type='sum'):
 
 # ----------------------------------------------------------------------
 
-def lupton_stretch(I,Q,alpha):
+def lupton_stretch(I, Q, alpha):
 
     return numpy.arcsinh(alpha*Q*I) / (Q*I)
 
 # ----------------------------------------------------------------------
 # Clip high values to box:
 
-def lupton_saturate(r,g,b,threshold):
+def lupton_saturate(r, g, b, threshold):
 
-    x = numpy.dstack((r,g,b))
+    x = numpy.dstack((r, g, b))
 
     # Highest pixel-value at given position
     maxpix = numpy.max(x, axis=-1)
@@ -45,13 +45,13 @@ def lupton_saturate(r,g,b,threshold):
     gg = g/maxpix
     bb = b/maxpix
 
-    return rr,gg,bb
+    return rr, gg, bb
 
 # ======================================================================
 # Testing:
 
 if __name__ == '__main__':
 
-    print "No tests defined"
+    print("No tests defined")
 
 # ======================================================================

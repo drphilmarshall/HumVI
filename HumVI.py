@@ -4,7 +4,7 @@
 # Globally useful modules:
 
 import numpy
-import sys,getopt
+import sys, getopt
 from PIL import Image
 import humvi
 import os
@@ -112,11 +112,11 @@ def HumVI(argv):
 
     try:
         opts, args = getopt.getopt(argv, "hvp:s:n:o:x:z:blwm:",\
-        ["help","verbose","scales","pars","output","saturate-to","offset","subtract-background","lupton","wherry","mask"])
-    except getopt.GetoptError, err:
+        ["help", "verbose", "scales", "pars", "output", "saturate-to", "offset", "subtract-background", "lupton", "wherry", "mask"])
+    except getopt.GetoptError as err:
         # print help information and exit:
-        print str(err) # will print something like "option -a not recognized"
-        print HumVI.__doc__
+        print(str(err)) # will print something like "option -a not recognized"
+        print(HumVI.__doc__)
         return
 
     vb = False
@@ -133,25 +133,25 @@ def HumVI(argv):
     offset = 0.0
     masklevel = None # Better default would be -1.0
 
-    for o,a in opts:
+    for o, a in opts:
         if o in ("-h", "--help"):
-            print HumVI.__doc__
+            print(HumVI.__doc__)
             return
         elif o in ("-v", "--verbose"):
             vb = True
-        elif o in ("-p","--parameters"):
+        elif o in ("-p", "--parameters"):
             pars = a
-        elif o in ("-s","--scales"):
+        elif o in ("-s", "--scales"):
             scales = a
-        elif o in ("-x","--saturate-to"):
+        elif o in ("-x", "--saturate-to"):
             saturation = a
-        elif o in ("-z","--offset"):
+        elif o in ("-z", "--offset"):
             offset = float(a)
-        elif o in ("-m","--mask"):
+        elif o in ("-m", "--mask"):
             masklevel = float(a)
-        elif o in ("-o","--output"):
+        elif o in ("-o", "--output"):
             outfile = a
-        elif o in ("-b","--subtract-background"):
+        elif o in ("-b", "--subtract-background"):
             backsub = True
         else:
             assert False, "Unhandled option"
@@ -159,7 +159,7 @@ def HumVI(argv):
 
     # Check for datafiles in array args:
 
-    print len(args)
+    print(len(args))
 
     if len(args) == 3:
         rfile = args[0]
@@ -167,21 +167,21 @@ def HumVI(argv):
         bfile = args[2]
 
     else:
-        print HumVI.__doc__
+        print(HumVI.__doc__)
         return
 
     # Parse nonlinearity parameters:
-    Qs,alphas = pars.split(',')
+    Qs, alphas = pars.split(',')
     Q = float(Qs)
     alpha = float(alphas)
 
     # Parse channel colour scales:
-    x,y,z = scales.split(',')
-    rscale,gscale,bscale = float(x),float(y),float(z)
+    x, y, z = scales.split(',')
+    rscale, gscale, bscale = float(x), float(y), float(z)
 
     # Compose the image!
 
-    humvi.compose(rfile, gfile, bfile, scales=(rscale,gscale,bscale), Q=Q, alpha=alpha, masklevel=masklevel, saturation=saturation, offset=offset, backsub=backsub, vb=vb, outfile=outfile)
+    humvi.compose(rfile, gfile, bfile, scales=(rscale, gscale, bscale), Q=Q, alpha=alpha, masklevel=masklevel, saturation=saturation, offset=offset, backsub=backsub, vb=vb, outfile=outfile)
 
     return
 

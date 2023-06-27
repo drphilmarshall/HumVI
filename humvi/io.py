@@ -8,7 +8,7 @@ information.
 # ======================================================================
 # Globally useful modules:
 
-import numpy,os
+import numpy, os
 import astropy.io.fits as pyfits
 from PIL import Image
 
@@ -22,7 +22,7 @@ vb = 0
 
 class channel:
 
-    def __init__(self,fitsfile):
+    def __init__(self, fitsfile):
 
         self.input = fitsfile
         # Read in image and header:
@@ -188,7 +188,7 @@ class channel:
         return
 
     def writefits(self):
-        self.output = str.split(self.input,'.')[0]+'_calibrated.fits'
+        self.output = str.split(self.input, '.')[0]+'_calibrated.fits'
         if os.path.exists(self.output): os.remove(self.output)
         hdu = pyfits.PrimaryHDU()
         hdu.header = self.hdr
@@ -201,7 +201,7 @@ class channel:
 
 def normalize_scales(scales):
     assert len(scales) == 3
-    s1,s2,s3 = scales
+    s1, s2, s3 = scales
     mean = (s1 + s2 + s3)/3.0
     return s1/mean, s2/mean, s3/mean
 
@@ -230,27 +230,27 @@ def filter2wavelength(fname):
 
 # ----------------------------------------------------------------------
 
-def check_image_shapes(r,g,b):
+def check_image_shapes(r, g, b):
 
     if (numpy.shape(r) != numpy.shape(g)) or \
         (numpy.shape(r) != numpy.shape(b)):
-        raise "Image arrays are of different shapes, exiting"
+        raise Exception("Image arrays are of different shapes, exiting")
 
     return
 
 # ----------------------------------------------------------------------
 # Make an 8 bit integer image cube from three channels:
 
-def pack_up(r,g,b):
+def pack_up(r, g, b):
 
-    NX,NY = numpy.shape(r)
+    NX, NY = numpy.shape(r)
 
-    x = numpy.zeros([NX,NY,3])
-    x[:,:,0] = numpy.flipud(r)
-    x[:,:,1] = numpy.flipud(g)
-    x[:,:,2] = numpy.flipud(b)
+    x = numpy.zeros([NX, NY, 3])
+    x[:,:, 0] = numpy.flipud(r)
+    x[:,:, 1] = numpy.flipud(g)
+    x[:,:, 2] = numpy.flipud(b)
 
-    x = numpy.clip(x,0.0,1.0)
+    x = numpy.clip(x, 0.0, 1.0)
     x = x*255
 
     return Image.fromarray(x.astype(numpy.uint8))
